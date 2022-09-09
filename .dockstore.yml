@@ -1,0 +1,5 @@
+version: 1.2
+workflows:
+   -  name: hifiasmHic2meryl
+      subclass: WDL
+      primaryDescriptorPath: /assembly/wdl/workflows/hifiasmHicHaplotype2meryl.wdl
