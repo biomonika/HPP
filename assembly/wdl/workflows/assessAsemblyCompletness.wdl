@@ -4,7 +4,7 @@ version 1.0
 workflow assessAssemblyCompletness{
     input {
         File assembly
-        String assembly_name=sub(sub(sub(assembly, "\\.gz$", ""), "\\.fasta$", ""), "\\.fa$", "") #remove the file extension
+        String assembly_name=basename(sub(sub(sub(assembly, "\\.gz$", ""), "\\.fasta$", ""), "\\.fa$", "")) #remove the file extension
         File reference
         Int threadCount=1
         Int memSizeGB=4
