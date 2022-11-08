@@ -101,7 +101,7 @@ task compressAssembly {
         #if the assembly is not compressed yet, it should be compressed now
         if [[ ~{assembly} == *gz ]]; then 
             echo "Assembly is already compressed"
-            cp ~{assembly} ~{assembly_name}.compressed.fa.gz 
+            cat ~{assembly} > ~{assembly_name}.compressed.fa.gz 
         else
             echo "Assembly needs to be compressed"
             gzip -cvf ~{assembly} > ~{assembly_name}.compressed.fa.gz
