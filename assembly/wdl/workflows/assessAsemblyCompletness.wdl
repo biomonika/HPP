@@ -97,14 +97,14 @@ task compressAssembly {
         set -e
         set -u
         set -o xtrace
-        
-        cp ~{assembly} ~{assembly_name}.compressed.fa.gz
 
         #if the assembly is not compressed yet, it should be compressed now
-        if (file ~{assembly} | grep -q compressed ) ; then 
-            echo "Assembly is already compressed"; 
+        if [[ ~{assembly} == *gz ]]; then 
+            echo "Assembly is already compressed"
+            cp ~{assembly} ~{assembly_name}.compressed.fa.gz 
         else
-            tar -czvf ~{assembly_name}.compressed.fa.gz ~{assembly} 
+            echo "Assembly needs to be compressed"
+            gzip -cvf ~{assembly} > ~{assembly_name}.compressed.fa.gz
         fi
 
         
@@ -116,7 +116,7 @@ task compressAssembly {
 
     runtime {
         preemptible : preemptible
-        docker: "quay.io/biocontainers/gzip:1.11"
+        docker: "ubuntu:18.04"
     }
 }
 
