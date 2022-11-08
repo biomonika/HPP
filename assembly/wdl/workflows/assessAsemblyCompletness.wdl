@@ -16,6 +16,7 @@ workflow assessAssemblyCompletness{
         input:
             assembly=assembly,
             assembly_name=assembly_name,
+            memSizeGB=memSizeGB,
             preemptible=preemptible
     }
 
@@ -23,6 +24,7 @@ workflow assessAssemblyCompletness{
         input:
             compressedAssembly=compressAssembly.compressedAssembly,
             assembly_name=assembly_name,
+            memSizeGB=memSizeGB,
             preemptible=preemptible
     }
 
@@ -31,6 +33,7 @@ workflow assessAssemblyCompletness{
             assembly=assembly,
             assembly_name=assembly_name,
             edges=generateAssemblyEdges.edges,
+            memSizeGB=memSizeGB,
             preemptible=preemptible
     }
     
@@ -46,6 +49,7 @@ workflow assessAssemblyCompletness{
         input:
             edgesFasta=combineIntoFasta.edgesFasta,
             assembly_name=assembly_name,
+            memSizeGB=memSizeGB,
             preemptible=preemptible
     }
 
@@ -88,6 +92,7 @@ task compressAssembly {
     input{
         File assembly
         String assembly_name
+        Int memSizeGB
         Int preemptible
     }
     command <<<
@@ -115,6 +120,7 @@ task compressAssembly {
     }
 
     runtime {
+        memory: memSizeGB + " GB"
         preemptible : preemptible
         docker: "ubuntu:18.04"
     }
@@ -124,6 +130,7 @@ task generateAssemblyEdges {
     input{
         File compressedAssembly
         String assembly_name
+        Int memSizeGB
         Int preemptible
     }
     command <<<
@@ -152,6 +159,7 @@ task generateAssemblyEdges {
     }
 
     runtime {
+        memory: memSizeGB + " GB"
         preemptible : preemptible
         docker: "quay.io/biocontainers/gawk:5.1.0"
     }
@@ -162,6 +170,7 @@ task runBioawk {
         File assembly
         File edges
         String assembly_name
+        Int memSizeGB
         Int preemptible
 
     }
@@ -194,6 +203,7 @@ task runBioawk {
     }
 
     runtime {
+        memory: memSizeGB + " GB"
         preemptible : preemptible
         docker: "quay.io/biocontainers/bioawk:1.0--hed695b0_5"
     }
@@ -234,6 +244,7 @@ task runNCRF {
     input{
         File edgesFasta
         String assembly_name
+        Int memSizeGB
         Int preemptible
     }
     command <<<
@@ -255,6 +266,7 @@ task runNCRF {
     }
 
     runtime {
+        memory: memSizeGB + " GB"
         preemptible : preemptible
         docker: "quay.io/biocontainers/ncrf:1.01.02--hec16e2b_3"
     }
