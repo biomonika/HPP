@@ -7,7 +7,7 @@ workflow assessAssemblyCompletness{
         String assembly_name=basename(sub(sub(sub(assembly, "\\.gz$", ""), "\\.fasta$", ""), "\\.fa$", "")) #remove the file extension
         File reference
         Int threadCount=1
-        Int memSizeGB=16
+        Int memSizeGB=32
         Int preemptible = 1
     }
 
