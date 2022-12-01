@@ -327,13 +327,20 @@ task assessCompletness {
     #CREATE A SUMMARY FILE
     cat ~{telomericEnds} | while read line; do contig=`echo $line | sed 's/_.*//'`; egrep --color ${contig} ~{lengths} | tr -d '\n'; echo -ne '\t'; egrep --color ${contig} ~{unknown} | tr -d '\n'; echo -ne '\t'; egrep --color ${contig} ~{mashmap} | tr -s "[:blank:]" "\t" ; done | cut -f1,2,4,10 | sort | uniq -c | sort -rgk1 | tr -s "[:blank:]" "\t" | sed 's/^\t//' >~{assembly_name}.SUMMARY.txt
 
-    #write T2T scaffolds, the number of Ns must be 0
+    #write headers
     echo -e "name\tlength\tNs\tchromosome" >~{assembly_name}.T2T.scaffolds.txt
-    cat ~{assembly_name}.SUMMARY.txt | grep "^2" | awk '{if ($4==0) print;}'  | cut -f2- | sort -k4,4 -V -s >>~{assembly_name}.T2T.scaffolds.txt
-
-    #write T2T contigs, the number of Ns is greater than 0
     echo -e "name\tlength\tNs\tchromosome" >~{assembly_name}.T2T.contigs.txt
-    cat ~{assembly_name}.SUMMARY.txt | grep "^2" | awk '{if ($4>0) print;}'  | cut -f2- | sort -k4,4 -V -s >>~{assembly_name}.T2T.contigs.txt
+
+    #check if there are telomeres on both sides
+    if grep -q "^2" ~{assembly_name}.SUMMARY.txt; then
+        #write T2T scaffolds, the number of Ns must be 0
+        cat ~{assembly_name}.SUMMARY.txt | grep "^2" | awk '{if ($4>=0) print;}'  | cut -f2- | sort -k4,4 -V -s >>~{assembly_name}.T2T.scaffolds.txt || true
+
+        #write T2T contigs, the number of Ns is greater than 0
+        cat ~{assembly_name}.SUMMARY.txt | grep "^2" | awk '{if ($4==0) print;}'  | cut -f2- | sort -k4,4 -V -s >>~{assembly_name}.T2T.contigs.txt || true
+    else
+        echo "None of the contigs/scaffolds contained telomeres on both ends."
+    fi
     
     echo "Done."    
     >>>
