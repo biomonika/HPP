@@ -7,24 +7,20 @@ workflow assessAssemblyCompletness{
         String assembly_name=basename(sub(sub(sub(assembly, "\\.gz$", ""), "\\.fasta$", ""), "\\.fa$", "")) #remove the file extension
         File reference
         Int threadCount=1
-        Int memSizeGB=32
         Int preemptible = 1
     }
 
-
-    call compressAssembly {
+    call formatAssembly {
         input:
             assembly=assembly,
             assembly_name=assembly_name,
-            memSizeGB=memSizeGB,
             preemptible=preemptible
     }
 
     call generateAssemblyEdges {
         input:
-            compressedAssembly=compressAssembly.compressedAssembly,
+            assembly=formatAssembly.formattedAssembly,
             assembly_name=assembly_name,
-            memSizeGB=memSizeGB,
             preemptible=preemptible
     }
 
@@ -33,7 +29,6 @@ workflow assessAssemblyCompletness{
             assembly=assembly,
             assembly_name=assembly_name,
             edges=generateAssemblyEdges.edges,
-            memSizeGB=memSizeGB,
             preemptible=preemptible
     }
     
@@ -49,7 +44,6 @@ workflow assessAssemblyCompletness{
         input:
             edgesFasta=combineIntoFasta.edgesFasta,
             assembly_name=assembly_name,
-            memSizeGB=memSizeGB,
             preemptible=preemptible
     }
 
@@ -60,7 +54,6 @@ workflow assessAssemblyCompletness{
             assembly_name=assembly_name,
             reference=reference,
             threadCount=threadCount,
-            memSizeGB=memSizeGB,
             preemptible=preemptible
     }
 
@@ -88,11 +81,11 @@ workflow assessAssemblyCompletness{
     }
 }
 
-task compressAssembly {
+task formatAssembly {
     input{
         File assembly
         String assembly_name
-        Int memSizeGB
+        Int memSizeGB = 32
         Int preemptible
     }
     command <<<
@@ -103,34 +96,27 @@ task compressAssembly {
         set -u
         set -o xtrace
 
-        #if the assembly is not compressed yet, it should be compressed now
-        if [[ ~{assembly} == *gz ]]; then 
-            echo "Assembly is already compressed"
-            cat ~{assembly} > ~{assembly_name}.compressed.fa.gz 
-        else
-            echo "Assembly needs to be compressed"
-            gzip -cvf ~{assembly} > ~{assembly_name}.compressed.fa.gz
-        fi
+        seqtk seq -l0 ~{assembly} >~{assembly_name}.formatted.fa
 
         
     >>>
 
     output {
-        File compressedAssembly="${assembly_name}.compressed.fa.gz"
+        File formattedAssembly="~{assembly_name}.formatted.fa"
     }
 
     runtime {
         memory: memSizeGB + " GB"
         preemptible : preemptible
-        docker: "ubuntu:18.04"
+        docker: "quay.io/biocontainers/seqtk:1.3--hed695b0_2"
     }
 }
 
 task generateAssemblyEdges {
     input{
-        File compressedAssembly
+        File assembly
         String assembly_name
-        Int memSizeGB
+        Int memSizeGB = 32
         Int preemptible
     }
     command <<<
@@ -145,7 +131,7 @@ task generateAssemblyEdges {
         #extract first and last bases from each fasta entry
         
         #extract bases from the start and end of each entry in fasta
-        zcat ~{compressedAssembly} | gawk -v len="$bases" -F "" '{if (NR % 2 == 0) {for (i=1; i<=NF; i++) {if (i <= len || (NF-i) < len) {printf $(i)}}; printf "\n"}}' >~{assembly_name}.edges.tmp.txt
+        cat ~{assembly} | gawk -v len="$bases" -F "" '{if (NR % 2 == 0) {for (i=1; i<=NF; i++) {if (i <= len || (NF-i) < len) {printf $(i)}}; printf "\n"}}' >~{assembly_name}.edges.tmp.txt
         
         #split start and end into two rows
         cat ~{assembly_name}.edges.tmp.txt | sed -e "s/.\{$bases\}/&\n/g" | sed '/^$/d' >~{assembly_name}.edges.txt
@@ -170,7 +156,7 @@ task runBioawk {
         File assembly
         File edges
         String assembly_name
-        Int memSizeGB
+        Int memSizeGB = 32
         Int preemptible
 
     }
@@ -244,7 +230,7 @@ task runNCRF {
     input{
         File edgesFasta
         String assembly_name
-        Int memSizeGB
+        Int memSizeGB = 32
         Int preemptible
     }
     command <<<
@@ -278,7 +264,7 @@ task runMashMap {
         File assembly
         String assembly_name
         File reference
-        Int memSizeGB
+        Int memSizeGB = 32
         Int threadCount
         Int preemptible
     }
@@ -314,6 +300,7 @@ task assessCompletness {
         File lengths
         File unknown
         File mashmap
+        Int memSizeGB = 32
         Int preemptible
     }
     command <<<
@@ -351,6 +338,7 @@ task assessCompletness {
     }
 
     runtime {
+        memory: memSizeGB + " GB"
         preemptible : preemptible
         docker: "ubuntu:18.04"
     }
