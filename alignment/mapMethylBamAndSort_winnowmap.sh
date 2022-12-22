@@ -20,7 +20,7 @@ method="winnowmap"
 
 #check if appropriate meryl database exists yet
 
-meryl=repetitive_${ref_name}_k15_k15.txt
+meryl=repetitive_${ref_name}_k15.txt
 if [ -f "$FILE" ]; then
     echo "${meryl} database already exists."
 else 
@@ -33,7 +33,7 @@ fi
 #script based on the wdl file by Melissa Meredith
 #https://github.com/meredith705/ont_methylation/blob/32095600428d21bf53aef8a7ccc401b0f10a9145/tasks/minimap2.wdl
 
-samtools fastq -T MM,ML ${unaligned_methyl_bam} | winnowmap --split-prefix prefix.winnowmap.${ref_name} -W ${meryl} -ax map-ont -y ${ref_file} - | samtools view -@ ${in_cores} -bh - | samtools sort -@ ${in_cores} - > ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
+samtools fastq -T MM,ML ${unaligned_methyl_bam} | winnowmap -I 8G -W ${meryl} -ax map-ont -y ${ref_file} - | samtools view -@ ${in_cores} -bh - | samtools sort -@ ${in_cores} - > ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
 samtools index ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
 
 echo "Done."
