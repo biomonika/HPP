@@ -13,6 +13,7 @@ workflow findAssemblyBreakpoints{
         Int telomericMinLength = 400
         Int flankLength = 1000
         Int minContigLength = 200000
+        Int minIdentity = 95
         Int threadCount = 32
         Int preemptible = 1
     }
@@ -61,6 +62,7 @@ workflow findAssemblyBreakpoints{
             assembly=formatAssembly.formattedAssembly,
             assembly_name=assembly_name,
             reference=reference,
+            minIdentity=minIdentity,
             preemptible=preemptible
     }
 
@@ -337,6 +339,7 @@ task mapToCHM13 {
         File assembly
         String assembly_name
         File reference
+        Int minIdentity
         Int memSizeGB = 32
         Int threadCount = 100
         Int preemptible
@@ -349,46 +352,12 @@ task mapToCHM13 {
         set -u
         set -o xtrace
 
-        mashmap --threads ~{threadCount} --perc_identity 95 --noSplit -r ~{reference} -q ~{assembly} -o ~{assembly_name}.mashmap.tmp
+        mashmap --threads ~{threadCount} --perc_identity ~{minIdentity} --noSplit -r ~{reference} -q ~{assembly} -o ~{assembly_name}.mashmap.tmp
 
     >>>
 
     output {
         File mashmap = "${assembly_name}.mashmap.tmp"
-    }
-
-    runtime {
-        memory: memSizeGB + " GB"
-        cpu: threadCount
-        preemptible : preemptible
-        docker: "quay.io/biocontainers/mashmap:2.0--h543ed2d_4"
-    }
-
-}
-
-task runMashMap {
-    input{
-        File assembly
-        String assembly_name
-        File reference
-        Int memSizeGB = 32
-        Int threadCount
-        Int preemptible
-    }
-    command <<<
-
-        #handle potential errors and quit early
-        set -o pipefail
-        set -e
-        set -u
-        set -o xtrace
-
-        mashmap --threads ~{threadCount} --perc_identity 95 --noSplit -r ~{reference} -q ~{assembly} -o ~{assembly_name}.mashmap.txt
-        
-    >>>
-
-    output {
-        File mashmap = "${assembly_name}.mashmap.txt"
     }
 
     runtime {
