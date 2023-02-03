@@ -12,7 +12,7 @@ workflow findAssemblyBreakpoints{
         File annotationCENSAT
         Int telomericMinLength = 400
         Int flankLength = 1000
-        Int threadCount = 200
+        Int threadCount = 32
         Int preemptible = 1
     }
 
