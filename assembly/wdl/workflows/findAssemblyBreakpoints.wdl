@@ -54,13 +54,11 @@ workflow findAssemblyBreakpoints{
             preemptible=preemptible
     }
 
-
-    call runMashMap {
+    call mapToCHM13 {
         input:
-            assembly=assembly,
+            assembly=formatAssembly.formattedAssembly,
             assembly_name=assembly_name,
             reference=reference,
-            threadCount=threadCount,
             preemptible=preemptible
     }
 
@@ -70,7 +68,7 @@ workflow findAssemblyBreakpoints{
             telomericEnds=runNCRF.ends,
             lengths=runBioawk.lengths,
             unknown=runBioawk.unknown,
-            mashmap=runMashMap.mashmap,
+            mashmap=mapToCHM13.mashmap_tmp,
             preemptible=preemptible
     }
 
@@ -78,14 +76,6 @@ workflow findAssemblyBreakpoints{
         input:
             reference=reference,
             reference_name=reference_name,
-            preemptible=preemptible
-    }
-
-    call mapToCHM13 {
-        input:
-            assembly=formatAssembly.formattedAssembly,
-            assembly_name=assembly_name,
-            reference=reference,
             preemptible=preemptible
     }
 
@@ -337,6 +327,40 @@ task runNCRF {
 
 }
 
+task mapToCHM13 {
+    input{
+        File assembly
+        String assembly_name
+        File reference
+        Int memSizeGB = 32
+        Int threadCount = 100
+        Int preemptible
+    }
+    command <<<
+
+        #handle potential errors and quit early
+        set -o pipefail
+        set -e
+        set -u
+        set -o xtrace
+
+        mashmap --threads ~{threadCount} --perc_identity 95 --filter_mode one-to-one --noSplit -r ~{reference} -q ~{assembly} -o ~{assembly_name}.mashmap.tmp
+
+    >>>
+
+    output {
+        File mashmap_tmp = "${assembly_name}.mashmap.tmp"
+    }
+
+    runtime {
+        memory: memSizeGB + " GB"
+        cpu: threadCount
+        preemptible : preemptible
+        docker: "quay.io/biocontainers/mashmap:2.0--h543ed2d_4"
+    }
+
+}
+
 task runMashMap {
     input{
         File assembly
@@ -450,42 +474,6 @@ task createGenomeFile {
         preemptible : preemptible
         docker: "quay.io/biocontainers/bioawk:1.0--hed695b0_5"
     }
-}
-
-
-
-task mapToCHM13 {
-    input{
-        File assembly
-        String assembly_name
-        File reference
-        Int memSizeGB = 32
-        Int threadCount = 100
-        Int preemptible
-    }
-    command <<<
-
-        #handle potential errors and quit early
-        set -o pipefail
-        set -e
-        set -u
-        set -o xtrace
-
-        mashmap --threads ~{threadCount} --perc_identity 95 --filter_mode one-to-one --noSplit -r ~{reference} -q ~{assembly} -o ~{assembly_name}.mashmap.tmp
-
-    >>>
-
-    output {
-        File mashmap_tmp = "${assembly_name}.mashmap.tmp"
-    }
-
-    runtime {
-        memory: memSizeGB + " GB"
-        cpu: threadCount
-        preemptible : preemptible
-        docker: "quay.io/biocontainers/mashmap:2.0--h543ed2d_4"
-    }
-
 }
 
 task evaluate {
