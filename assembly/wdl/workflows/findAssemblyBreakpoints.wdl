@@ -414,6 +414,12 @@ task assessCompletness {
         File scaffolds = "${assembly_name}.T2T.scaffolds.txt"
         File contigs = "${assembly_name}.T2T.contigs.txt"
     }
+    
+    runtime {
+        memory: memSizeGB + " GB"
+        preemptible : preemptible
+        docker: "ubuntu:18.04"
+    }
 }
 
 task createGenomeFile {
