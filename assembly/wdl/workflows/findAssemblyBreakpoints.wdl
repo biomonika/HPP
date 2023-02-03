@@ -493,7 +493,7 @@ task evaluate {
         File mashmap_tmp
         File scaffolds
         String assembly_name
-        Int memSizeGB = 1
+        Int memSizeGB = 32
         Int threadCount = 11
         Int preemptible
     }
@@ -537,7 +537,7 @@ task createBedFiles {
         File genomeFile
         File assemblyBed
         Int flankLength
-        Int memSizeGB = 1
+        Int memSizeGB = 4
         Int threadCount = 11
         Int preemptible
     }
@@ -575,7 +575,7 @@ task filterFlanks {
         File telomericEnds
         String assembly_name
         Int flankLength = 1000
-        Int memSizeGB = 1
+        Int memSizeGB = 32
         Int threadCount = 11
         Int preemptible
     }
@@ -625,7 +625,7 @@ task intersectBed {
         File annotationBed
         File annotationSD
         File annotationCENSAT
-        Int memSizeGB = 1
+        Int memSizeGB = 4
         Int threadCount = 11
         Int preemptible
     }
@@ -668,7 +668,7 @@ task formatBreakAnnotation {
         File breakAnnotation_region
         File breakAnnotation_SD
         File breakAnnotation_CENSAT
-        Int memSizeGB = 1
+        Int memSizeGB = 4
         Int threadCount = 11
         Int preemptible
     }
