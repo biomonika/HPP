@@ -341,7 +341,7 @@ task mapToCHM13 {
         File reference
         Int minIdentity
         Int memSizeGB = 32
-        Int threadCount = 100
+        Int threadCount = 32
         Int preemptible
     }
     command <<<
