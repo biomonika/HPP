@@ -6,3 +6,6 @@ workflows:
    -  name: assessT2Tcompletness
       subclass: WDL
       primaryDescriptorPath: /assembly/wdl/workflows/assessAsemblyCompletness.wdl
+   -  name: findAssemblyBreakpoints
+      subclass: WDL
+      primaryDescriptorPath: /assembly/wdl/workflows/findAssemblyBreakpoints.wdl
