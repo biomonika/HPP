@@ -12,6 +12,7 @@ workflow findAssemblyBreakpoints{
         File annotationCENSAT
         Int telomericMinLength = 400
         Int flankLength = 1000
+        Int minContigLength = 200000
         Int threadCount = 32
         Int preemptible = 1
     }
@@ -20,6 +21,7 @@ workflow findAssemblyBreakpoints{
         input:
             assembly=assembly,
             assembly_name=assembly_name,
+            minContigLength=minContigLength,
             preemptible=preemptible
     }
 
@@ -32,7 +34,7 @@ workflow findAssemblyBreakpoints{
 
     call runBioawk {
         input:
-            assembly=assembly,
+            assembly=formatAssembly.formattedAssembly,
             assembly_name=assembly_name,
             edges=generateAssemblyEdges.edges,
             preemptible=preemptible
@@ -68,7 +70,7 @@ workflow findAssemblyBreakpoints{
             telomericEnds=runNCRF.ends,
             lengths=runBioawk.lengths,
             unknown=runBioawk.unknown,
-            mashmap=mapToCHM13.mashmap_tmp,
+            mashmap=mapToCHM13.mashmap,
             preemptible=preemptible
     }
 
@@ -81,7 +83,7 @@ workflow findAssemblyBreakpoints{
 
     call evaluate {
         input:
-            mashmap_tmp=mapToCHM13.mashmap_tmp,
+            mashmap=mapToCHM13.mashmap,
             scaffolds=assessCompletness.scaffolds,
             assembly_name=assembly_name,
             preemptible=preemptible
@@ -152,6 +154,7 @@ task formatAssembly {
     input{
         File assembly
         String assembly_name
+        Int minContigLength
         Int memSizeGB = 32
         Int preemptible
     }
@@ -163,8 +166,8 @@ task formatAssembly {
         set -u
         set -o xtrace
 
-        #unify line endings and filter out sequences shorter than 100kb
-        seqtk seq -l0 -L 200000 ~{assembly} >~{assembly_name}.formatted.fa
+        #unify line endings and filter out sequences shorter than 200kb
+        seqtk seq -l0 -L ~{minContigLength} ~{assembly} >~{assembly_name}.formatted.fa
 
     >>>
 
@@ -267,6 +270,7 @@ task combineIntoFasta {
         File headers
         File edges
         String assembly_name
+        Int memSizeGB = 4
         Int preemptible
     }
     command <<<
@@ -287,6 +291,7 @@ task combineIntoFasta {
     }
 
     runtime {
+        memory: memSizeGB + " GB"
         preemptible : preemptible
         docker: "ubuntu:18.04"
     }
@@ -344,12 +349,12 @@ task mapToCHM13 {
         set -u
         set -o xtrace
 
-        mashmap --threads ~{threadCount} --perc_identity 95 --filter_mode one-to-one --noSplit -r ~{reference} -q ~{assembly} -o ~{assembly_name}.mashmap.tmp
+        mashmap --threads ~{threadCount} --perc_identity 95 --noSplit -r ~{reference} -q ~{assembly} -o ~{assembly_name}.mashmap.tmp
 
     >>>
 
     output {
-        File mashmap_tmp = "${assembly_name}.mashmap.tmp"
+        File mashmap = "${assembly_name}.mashmap.tmp"
     }
 
     runtime {
@@ -478,7 +483,7 @@ task createGenomeFile {
 
 task evaluate {
     input{
-        File mashmap_tmp
+        File mashmap
         File scaffolds
         String assembly_name
         Int memSizeGB = 32
@@ -497,11 +502,11 @@ task evaluate {
 
 
     #EXCLUDE COMPLETE CHROMOSOMES
-    cat ~{mashmap_tmp} | sort -k6,6 -k8,8 -V -s >~{assembly_name}.mashmap.txt       #coordinates in the reference/CHM13
+    cat ~{mashmap} | sort -k6,6 -k8,8 -V -s >~{assembly_name}.mashmap.txt       #coordinates in the reference/CHM13
     cat ~{scaffolds} | cut -f4 >~{assembly_name}.complete_chromosomes.lst           #list of complete chromosomes that should be exluded from the breakpoint analysis
     
     #create bed file from the mashmap alignment
-    awk '{print $6 "\t" $8 "\t" $9 "\t" $1}' ~{mashmap_tmp} | sort -k1,1 -k2,2n -V -s >~{assembly_name}.tmp.bed     #create sorted bed file
+    awk '{print $6 "\t" $8 "\t" $9 "\t" $1}' ~{mashmap} | sort -k1,1 -k2,2n -V -s >~{assembly_name}.tmp.bed     #create sorted bed file
     grep -v -f ~{assembly_name}.complete_chromosomes.lst ~{assembly_name}.tmp.bed >~{assembly_name}.bed || true         #exclude complete chromosomes/scaffolds
 
    
@@ -687,7 +692,6 @@ task formatBreakAnnotation {
         docker: "quay.io/biocontainers/datamash:1.1.0--0"
     }
 }
-
 
 
 
