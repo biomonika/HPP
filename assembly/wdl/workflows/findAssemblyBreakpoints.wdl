@@ -656,21 +656,21 @@ task intersectBed {
 
     #intersect flanks with the annotation of genomic regions
     echo -e "~{assembly_name}""\t""annotation" >~{assembly_name}.region.breakAnnotation.txt
-    bedtools intersect -a ~{assemblyBed} -b ~{annotationBed} -loj | cut -f8 | sort | uniq -c | sed 's/^ *//g' | sed 's/ /\t/g' >>~{assembly_name}.region.breakAnnotation.txt
-    
     echo -e "~{assembly_name}""\t""annotation" >~{assembly_name}.SD.breakAnnotation.txt
-    bedtools intersect -a ~{assemblyBed} -b ~{annotationSD} -loj | cut -f8 | sort | uniq -c | sed 's/^ *//g' | sed 's/ /\t/g' >>~{assembly_name}.SD.breakAnnotation.txt
-    
     echo -e "~{assembly_name}""\t""annotation" >~{assembly_name}.CENSAT.breakAnnotation.txt
+    
+    bedtools intersect -a ~{assemblyBed} -b ~{annotationBed} -loj | cut -f8 | sort | uniq -c | sed 's/^ *//g' | sed 's/ /\t/g' >>~{assembly_name}.region.breakAnnotation.txt
+    bedtools intersect -a ~{assemblyBed} -b ~{annotationSD} -loj | cut -f8 | sort | uniq -c | sed 's/^ *//g' | sed 's/ /\t/g' >>~{assembly_name}.SD.breakAnnotation.txt
     bedtools intersect -a ~{assemblyBed} -b ~{annotationCENSAT} -loj | cut -f8 | sort | uniq -c | sed 's/^ *//g' | sed 's/ /\t/g' >>~{assembly_name}.CENSAT.breakAnnotation.txt
 
-    #GENERATE BED FILE FOR PLOTTING
+    #GENERATE BED FILES FOR PLOTTING
+    echo -e "#chr""\t"start""\t"end""\t""annotation" >~{assembly_name}.region.breakAnnotation.bed
+    echo -e "#chr""\t"start""\t"end""\t""annotation" >~{assembly_name}.region.breakAnnotation.bed
+    echo -e "#chr""\t"start""\t"end""\t""annotation" >~{assembly_name}.region.breakAnnotation.bed
+    
     bedtools intersect -a ~{assemblyBed} -b ~{annotationBed} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}'>>~{assembly_name}.region.breakAnnotation.bed
     bedtools intersect -a ~{assemblyBed} -b ~{annotationSD} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}'>>~{assembly_name}.SD.breakAnnotation.bed
     bedtools intersect -a ~{assemblyBed} -b ~{annotationCENSAT} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}'>>~{assembly_name}.CENSAT.breakAnnotation.bed
-
-
-    #PREPARE ANNOTATION FILE FOR PLOTTING
 
     >>>
 
