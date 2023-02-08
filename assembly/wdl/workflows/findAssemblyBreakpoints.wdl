@@ -66,6 +66,12 @@ workflow findAssemblyBreakpoints{
             preemptible=preemptible
     }
 
+    call createAssemblyStatistics {
+        input:
+            mashmap=evaluate.mappedAssembly,
+            preemptible=preemptible
+    }
+
     call assessCompletness {
         input:
             assembly_name=assembly_name,
@@ -139,6 +145,10 @@ workflow findAssemblyBreakpoints{
         File breakAnnotation_CENSAT = formatBreakAnnotation.formattedBreakAnnotation_CENSAT
         File assembly_CHM13 = evaluate.mappedAssembly
         File filteredFlanksBed = filterFlanks.filteredFlanksBed
+        File bedFile_region = intersectBed.bedFile_region
+        File bedFile_SD = intersectBed.bedFile_SD
+        File bedFile_CENSAT = intersectBed.bedFile_CENSAT
+        File assemblyStatistics = createAssemblyStatistics.assemblyStatistics
     }
 
     parameter_meta {
@@ -341,7 +351,7 @@ task mapToCHM13 {
         File reference
         Int minIdentity
         Int memSizeGB = 32
-        Int threadCount = 8
+        Int threadCount = 32
         Int preemptible
     }
     command <<<
@@ -367,6 +377,49 @@ task mapToCHM13 {
         docker: "quay.io/biocontainers/mashmap:2.0--h543ed2d_4"
     }
 
+}
+
+task createAssemblyStatistics {
+    input{
+        File mashmap
+        Int preemptible
+    }
+
+    command <<<
+        R --no-save --args ~{sep=" " mashmap} <<Rscript
+        args <- commandArgs(trailingOnly = TRUE)
+        filename<-args[1]
+
+        mashmap<-as.data.frame(read.table(filename))
+        colnames(mashmap)<-c("contig","contig_length","cstart","cend","strand","chr","chr_length","chstart","chend","identity")
+        coef<-1000000
+
+        library("dplyr")
+
+        #generate useful statistics about the assembly, e.g. how many Mbs of sequence were assembled
+        filtered_mashmap<-mashmap %>% 
+            mutate(chm13_length = chend - chstart) %>%
+            mutate(assembly_length = cend - cstart) %>%
+            group_by(chr) %>% 
+            summarise(reference_alignment_Mb = sum(chm13_length)/coef, 
+            assembly_alignment_Mb = sum(assembly_length)/coef, 
+            chromosome_length_Mb=max(chr_length)/coef,
+            largest_assembled_sequence_Mb=max(assembly_length)/coef)%>%
+            arrange(chr,.by_group=TRUE)
+        write.table(filtered_mashmap,file="assembly.statistics.tmp",quote=FALSE,row.names=FALSE,sep="\t")
+        Rscript
+
+        cat assembly.statistics.tmp | sort -k1,1 -V -s >assembly.statistics.txt
+
+    >>>
+
+    output {
+        File assemblyStatistics="assembly.statistics.txt"
+    }
+
+    runtime {
+        docker: "rocker/tidyverse"
+    }
 }
 
 task assessCompletness {
@@ -564,8 +617,10 @@ task filterFlanks {
     grep -v -f ~{assembly_name}.chromosome.ends.toExclude.txt ~{flanksBedEnd}  >~{assembly_name}.NOends.bed || true
 
 
-    cat ~{assembly_name}.NOstarts.bed ~{assembly_name}.NOends.bed >~{assembly_name}.merged.bed
-    awk '{if (($3-$2)==~{flankLength}) print;}' ~{assembly_name}.merged.bed >~{assembly_name}.filteredFlanks.bed
+    cat ~{assembly_name}.NOstarts.bed ~{assembly_name}.NOends.bed >~{assembly_name}.filteredFlanks.bed
+
+    #if the filtering below is not performed, some of the flanks will be potentially as short as 1bp 
+    #awk '{if (($3-$2)==~{flankLength}) print;}' ~{assembly_name}.merged.bed >~{assembly_name}.filteredFlanks.bed
     
     >>>
 
@@ -608,13 +663,24 @@ task intersectBed {
     
     echo -e "~{assembly_name}""\t""annotation" >~{assembly_name}.CENSAT.breakAnnotation.txt
     bedtools intersect -a ~{assemblyBed} -b ~{annotationCENSAT} -loj | cut -f8 | sort | uniq -c | sed 's/^ *//g' | sed 's/ /\t/g' >>~{assembly_name}.CENSAT.breakAnnotation.txt
-    
+
+    #GENERATE BED FILE FOR PLOTTING
+    bedtools intersect -a ~{assemblyBed} -b ~{annotationBed} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}'>>~{assembly_name}.region.breakAnnotation.bed
+    bedtools intersect -a ~{assemblyBed} -b ~{annotationSD} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}'>>~{assembly_name}.SD.breakAnnotation.bed
+    bedtools intersect -a ~{assemblyBed} -b ~{annotationCENSAT} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}'>>~{assembly_name}.CENSAT.breakAnnotation.bed
+
+
+    #PREPARE ANNOTATION FILE FOR PLOTTING
+
     >>>
 
     output {
         File breakAnnotation_region = "${assembly_name}.region.breakAnnotation.txt"
         File breakAnnotation_SD = "${assembly_name}.SD.breakAnnotation.txt"
         File breakAnnotation_CENSAT = "${assembly_name}.CENSAT.breakAnnotation.txt"
+        File bedFile_region = "${assembly_name}.region.breakAnnotation.bed"
+        File bedFile_SD = "${assembly_name}.SD.breakAnnotation.bed"
+        File bedFile_CENSAT = "${assembly_name}.CENSAT.breakAnnotation.bed"
     }
 
     runtime {
