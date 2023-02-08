@@ -145,9 +145,9 @@ workflow findAssemblyBreakpoints{
         File breakAnnotation_CENSAT = formatBreakAnnotation.formattedBreakAnnotation_CENSAT
         File assembly_CHM13 = evaluate.mappedAssembly
         File filteredFlanksBed = filterFlanks.filteredFlanksBed
-        File bedFile_region = intersectBed.bedFile_region
-        File bedFile_SD = intersectBed.bedFile_SD
-        File bedFile_CENSAT = intersectBed.bedFile_CENSAT
+        File bed_region = intersectBed.bedFile_region
+        File bed_SD = intersectBed.bedFile_SD
+        File bed_CENSAT = intersectBed.bedFile_CENSAT
         File assemblyStatistics = createAssemblyStatistics.assemblyStatistics
     }
 
@@ -678,9 +678,9 @@ task intersectBed {
         File breakAnnotation_region = "${assembly_name}.region.breakAnnotation.txt"
         File breakAnnotation_SD = "${assembly_name}.SD.breakAnnotation.txt"
         File breakAnnotation_CENSAT = "${assembly_name}.CENSAT.breakAnnotation.txt"
-        File bedFile_region = "${assembly_name}.region.breakAnnotation.bed"
-        File bedFile_SD = "${assembly_name}.SD.breakAnnotation.bed"
-        File bedFile_CENSAT = "${assembly_name}.CENSAT.breakAnnotation.bed"
+        File bed_region = "${assembly_name}.region.breakAnnotation.bed"
+        File bed_SD = "${assembly_name}.SD.breakAnnotation.bed"
+        File bed_CENSAT = "${assembly_name}.CENSAT.breakAnnotation.bed"
     }
 
     runtime {
