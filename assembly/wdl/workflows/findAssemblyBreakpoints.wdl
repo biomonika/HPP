@@ -702,11 +702,11 @@ task filterFlanks {
     awk '{if (($7-$9)<(1000000)) print;}' ~{mashmap} | cut -d' ' -f1 | sort >~{assembly_name}.chromosome.ends.txt
 
     #if both the chromosome start _and_ has telomeric repeat, then exclude
-    cat ~{telomericEnds} | grep "start" | sed 's/_start//g' >starts_with_telomeric_repeat.txt
+    cat ~{telomericEnds} | grep "start" | sed 's/_start//g' | sort >starts_with_telomeric_repeat.txt
     comm -12 ~{assembly_name}.chromosome.starts.txt starts_with_telomeric_repeat.txt >~{assembly_name}.chromosome.starts.toExclude.txt
 
     #if both the chromosome end _and_ has telomeric repeat, then exclude
-    cat ~{telomericEnds} | grep "end" | sed 's/_end//g' >ends_with_telomeric_repeat.txt
+    cat ~{telomericEnds} | grep "end" | sed 's/_end//g' | sort >ends_with_telomeric_repeat.txt
     comm -12 ~{assembly_name}.chromosome.ends.txt ends_with_telomeric_repeat.txt >~{assembly_name}.chromosome.ends.toExclude.txt
 
     #exclude starts that have telomeric repeat
@@ -767,9 +767,9 @@ task intersectBed {
     echo -e "#chr""\t""start""\t""end""\t""annotation" >~{assembly_name}.region.breakAnnotation.bed
     echo -e "#chr""\t""start""\t""end""\t""annotation" >~{assembly_name}.region.breakAnnotation.bed
     
-    bedtools intersect -a ~{assemblyBed} -b ~{annotationBed} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}'>>~{assembly_name}.region.breakAnnotation.bed
-    bedtools intersect -a ~{assemblyBed} -b ~{annotationSD} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}'>>~{assembly_name}.SD.breakAnnotation.bed
-    bedtools intersect -a ~{assemblyBed} -b ~{annotationCENSAT} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}'>>~{assembly_name}.CENSAT.breakAnnotation.bed
+    bedtools intersect -a ~{assemblyBed} -b ~{annotationBed} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}' | sort -k1,1 -k2,2n -V -s >>~{assembly_name}.region.breakAnnotation.bed
+    bedtools intersect -a ~{assemblyBed} -b ~{annotationSD} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}' | sort -k1,1 -k2,2n -V -s >>~{assembly_name}.SD.breakAnnotation.bed
+    bedtools intersect -a ~{assemblyBed} -b ~{annotationCENSAT} -loj | awk '{print $1 "\t" $2 "\t" $3 "\t" $8}' | sort -k1,1 -k2,2n -V -s >>~{assembly_name}.CENSAT.breakAnnotation.bed
 
     >>>
 
