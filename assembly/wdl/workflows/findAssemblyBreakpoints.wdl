@@ -258,6 +258,7 @@ task unifyAssembly {
         File contigsToBeKeptAsIs
         Int memSizeGB = 32
         Int threadCount = 32
+        Int diskSizeGB  = 25
         Int preemptible
     }
     command <<<
@@ -270,6 +271,7 @@ task unifyAssembly {
 
         seqtk subseq ~{assembly} ~{contigsToBeReverseComplemented} >contigsToBeReverseComplemented.tmp
         seqtk seq -r contigsToBeReverseComplemented.tmp >contigsToBeReverseComplemented.fa
+        rm contigsToBeReverseComplemented.tmp
         seqtk subseq ~{assembly} ~{contigsToBeKeptAsIs} >contigsToBeKeptAsIs.fa
         
         cat contigsToBeReverseComplemented.fa contigsToBeKeptAsIs.fa >~{assembly_name}.unifiedAssembly.fa
@@ -283,6 +285,7 @@ task unifyAssembly {
     runtime {
         memory: memSizeGB + " GB"
         cpu: threadCount
+        disks: "local-disk " + diskSizeGB + " SSD"
         preemptible : preemptible
         docker: "quay.io/biocontainers/seqtk:1.3--hed695b0_2"
     }
