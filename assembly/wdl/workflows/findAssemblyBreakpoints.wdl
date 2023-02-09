@@ -26,16 +26,43 @@ workflow findAssemblyBreakpoints{
             preemptible=preemptible
     }
 
-    call generateAssemblyEdges {
+    call trialMashmap {
         input:
             assembly=formatAssembly.formattedAssembly,
+            assembly_name=assembly_name,
+            reference=reference,
+            minIdentity=minIdentity,
+            preemptible=preemptible
+    }
+
+    call unifyAssembly {
+        input:
+            assembly=formatAssembly.formattedAssembly,
+            assembly_name=assembly_name,
+            contigsToBeReverseComplemented=trialMashmap.contigsToBeReverseComplemented,
+            contigsToBeKeptAsIs=trialMashmap.contigsToBeKeptAsIs,
+            preemptible=preemptible
+    }
+
+    call mapToCHM13 {
+        input:
+            assembly=unifyAssembly.unifiedAssembly,
+            assembly_name=assembly_name,
+            reference=reference,
+            minIdentity=minIdentity,
+            preemptible=preemptible
+    }
+
+    call generateAssemblyEdges {
+        input:
+            assembly=unifyAssembly.unifiedAssembly,
             assembly_name=assembly_name,
             preemptible=preemptible
     }
 
     call runBioawk {
         input:
-            assembly=formatAssembly.formattedAssembly,
+            assembly=unifyAssembly.unifiedAssembly,
             assembly_name=assembly_name,
             edges=generateAssemblyEdges.edges,
             preemptible=preemptible
@@ -54,15 +81,6 @@ workflow findAssemblyBreakpoints{
             edgesFasta=combineIntoFasta.edgesFasta,
             assembly_name=assembly_name,
             telomericMinLength=telomericMinLength,
-            preemptible=preemptible
-    }
-
-    call mapToCHM13 {
-        input:
-            assembly=formatAssembly.formattedAssembly,
-            assembly_name=assembly_name,
-            reference=reference,
-            minIdentity=minIdentity,
             preemptible=preemptible
     }
 
@@ -140,6 +158,7 @@ workflow findAssemblyBreakpoints{
     output {
         File T2Tcontigs = assessCompletness.contigs
         File T2Tscaffolds = assessCompletness.scaffolds
+        File unifiedAssembly = unifyAssembly.unifiedAssembly
         File breakAnnotation_region = formatBreakAnnotation.formattedBreakAnnotation_region
         File breakAnnotation_SD = formatBreakAnnotation.formattedBreakAnnotation_SD
         File breakAnnotation_CENSAT = formatBreakAnnotation.formattedBreakAnnotation_CENSAT
@@ -193,6 +212,117 @@ task formatAssembly {
         docker: "quay.io/biocontainers/seqtk:1.3--hed695b0_2"
     }
 }
+task trialMashmap {
+    input{
+        File assembly
+        String assembly_name
+        File reference
+        Int minIdentity
+        Int memSizeGB = 32
+        Int threadCount = 32
+        Int preemptible
+    }
+    command <<<
+
+        #handle potential errors and quit early
+        set -o pipefail
+        set -e
+        set -u
+        set -o xtrace
+
+        mashmap --threads ~{threadCount} --perc_identity ~{minIdentity} --noSplit -r ~{reference} -q ~{assembly} -o ~{assembly_name}.mashmap.tmp
+
+        cat ~{assembly_name}.mashmap.tmp | awk '{if ($5=="-") print $1}' | sed 's/>//g' >~{assembly_name}.contigsToBeReverseComplemented.lst
+        cat ~{assembly_name}.mashmap.tmp | awk '{if ($5=="+") print $1}' | sed 's/>//g' >~{assembly_name}.contigsToBeKeptAsIs.lst
+
+    >>>
+
+    output {
+        File contigsToBeReverseComplemented = "${assembly_name}.contigsToBeReverseComplemented.lst"
+        File contigsToBeKeptAsIs = "${assembly_name}.contigsToBeKeptAsIs.lst"
+    }
+
+    runtime {
+        memory: memSizeGB + " GB"
+        cpu: threadCount
+        preemptible : preemptible
+        docker: "quay.io/biocontainers/mashmap:2.0--h543ed2d_4"
+    }
+}
+
+task unifyAssembly {
+    input{
+        File assembly
+        String assembly_name
+        File contigsToBeReverseComplemented
+        File contigsToBeKeptAsIs
+        Int memSizeGB = 32
+        Int threadCount = 32
+        Int preemptible
+    }
+    command <<<
+
+        #handle potential errors and quit early
+        set -o pipefail
+        set -e
+        set -u
+        set -o xtrace
+
+        seqtk subseq ~{assembly} ~{contigsToBeReverseComplemented} >contigsToBeReverseComplemented.tmp
+        seqtk seq -r contigsToBeReverseComplemented.tmp >contigsToBeReverseComplemented.fa
+        seqtk subseq ~{assembly} ~{contigsToBeKeptAsIs} >contigsToBeKeptAsIs.fa
+        
+        cat contigsToBeReverseComplemented.fa contigsToBeKeptAsIs.fa >~{assembly_name}.unifiedAssembly.fa
+
+    >>>
+
+    output {
+        File unifiedAssembly = "${assembly_name}.unifiedAssembly.fa"
+    }
+
+    runtime {
+        memory: memSizeGB + " GB"
+        cpu: threadCount
+        preemptible : preemptible
+        docker: "quay.io/biocontainers/seqtk:1.3--hed695b0_2"
+    }
+}
+
+task mapToCHM13 {
+    input{
+        File assembly
+        String assembly_name
+        File reference
+        Int minIdentity
+        Int memSizeGB = 32
+        Int threadCount = 32
+        Int preemptible
+    }
+    command <<<
+
+        #handle potential errors and quit early
+        set -o pipefail
+        set -e
+        set -u
+        set -o xtrace
+
+        mashmap --threads ~{threadCount} --perc_identity ~{minIdentity} --noSplit -r ~{reference} -q ~{assembly} -o ~{assembly_name}.mashmap.tmp
+
+    >>>
+
+    output {
+        File mashmap = "${assembly_name}.mashmap.tmp"
+    }
+
+    runtime {
+        memory: memSizeGB + " GB"
+        cpu: threadCount
+        preemptible : preemptible 
+        docker: "quay.io/biocontainers/mashmap:2.0--h543ed2d_4"
+    }
+}
+
+
 
 task generateAssemblyEdges {
     input{
@@ -340,41 +470,6 @@ task runNCRF {
         memory: memSizeGB + " GB"
         preemptible : preemptible
         docker: "quay.io/biocontainers/ncrf:1.01.02--hec16e2b_3"
-    }
-
-}
-
-task mapToCHM13 {
-    input{
-        File assembly
-        String assembly_name
-        File reference
-        Int minIdentity
-        Int memSizeGB = 32
-        Int threadCount = 32
-        Int preemptible
-    }
-    command <<<
-
-        #handle potential errors and quit early
-        set -o pipefail
-        set -e
-        set -u
-        set -o xtrace
-
-        mashmap --threads ~{threadCount} --perc_identity ~{minIdentity} --noSplit -r ~{reference} -q ~{assembly} -o ~{assembly_name}.mashmap.tmp
-
-    >>>
-
-    output {
-        File mashmap = "${assembly_name}.mashmap.tmp"
-    }
-
-    runtime {
-        memory: memSizeGB + " GB"
-        cpu: threadCount
-        preemptible : preemptible
-        docker: "quay.io/biocontainers/mashmap:2.0--h543ed2d_4"
     }
 
 }
@@ -529,7 +624,7 @@ task evaluate {
     
     #create bed file from the mashmap alignment
     awk '{print $6 "\t" $8 "\t" $9 "\t" $1}' ~{mashmap} | sort -k1,1 -k2,2n -V -s >~{assembly_name}.tmp.bed     #create sorted bed file
-    grep -v -f ~{assembly_name}.complete_chromosomes.lst ~{assembly_name}.tmp.bed >~{assembly_name}.bed || true         #exclude complete chromosomes/scaffolds
+    grep -w -v -f ~{assembly_name}.complete_chromosomes.lst ~{assembly_name}.tmp.bed >~{assembly_name}.bed || true         #exclude complete chromosomes/scaffolds
 
    
     >>>
@@ -603,18 +698,22 @@ task filterFlanks {
     set -o xtrace
 
     #EXCLUDE BREAKS THAT ARE NOT REAL BREAKS, AS THEY ARE AT THE CHROMOSOME END AND CONTAIN TELOMERIC REPEAT
-    awk '{if ($8<(1000000)) print;}' ~{mashmap} | cut -d' ' -f1 >~{assembly_name}.chromosome.starts.txt
-    awk '{if (($7-$9)<(1000000)) print;}' ~{mashmap} | cut -d' ' -f1 >~{assembly_name}.chromosome.ends.txt
+    awk '{if ($8<(1000000)) print;}' ~{mashmap} | cut -d' ' -f1 | sort >~{assembly_name}.chromosome.starts.txt
+    awk '{if (($7-$9)<(1000000)) print;}' ~{mashmap} | cut -d' ' -f1 | sort >~{assembly_name}.chromosome.ends.txt
 
-    while read -r contig; do grep "${contig}_start" ~{telomericEnds} | sed 's/_start//g' >>~{assembly_name}.chromosome.starts.toExclude.txt || true; done < ~{assembly_name}.chromosome.starts.txt
-    
-    while read -r contig; do grep "${contig}_end" ~{telomericEnds} | sed 's/_end//g' >>~{assembly_name}.chromosome.ends.toExclude.txt || true; done < ~{assembly_name}.chromosome.ends.txt
+    #if both the chromosome start _and_ has telomeric repeat, then exclude
+    cat ~{telomericEnds} | grep "start" | sed 's/_start//g' >starts_with_telomeric_repeat.txt
+    comm -12 ~{assembly_name}.chromosome.starts.txt starts_with_telomeric_repeat.txt >~{assembly_name}.chromosome.starts.toExclude.txt
+
+    #if both the chromosome end _and_ has telomeric repeat, then exclude
+    cat ~{telomericEnds} | grep "end" | sed 's/_end//g' >ends_with_telomeric_repeat.txt
+    comm -12 ~{assembly_name}.chromosome.ends.txt ends_with_telomeric_repeat.txt >~{assembly_name}.chromosome.ends.toExclude.txt
 
     #exclude starts that have telomeric repeat
-    grep -v -f ~{assembly_name}.chromosome.starts.toExclude.txt ~{flanksBedStart}  >~{assembly_name}.NOstarts.bed || true
+    grep -w -v -f ~{assembly_name}.chromosome.starts.toExclude.txt ~{flanksBedStart}  >~{assembly_name}.NOstarts.bed || true
 
     #exclude ends that have telomeric repeat
-    grep -v -f ~{assembly_name}.chromosome.ends.toExclude.txt ~{flanksBedEnd}  >~{assembly_name}.NOends.bed || true
+    grep -w -v -f ~{assembly_name}.chromosome.ends.toExclude.txt ~{flanksBedEnd}  >~{assembly_name}.NOends.bed || true
 
 
     cat ~{assembly_name}.NOstarts.bed ~{assembly_name}.NOends.bed >~{assembly_name}.filteredFlanks.bed
@@ -727,6 +826,5 @@ task formatBreakAnnotation {
         docker: "quay.io/biocontainers/datamash:1.1.0--0"
     }
 }
-
 
 
