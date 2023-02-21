@@ -33,7 +33,7 @@ else
 fi
 
 #do the mapping with methylation tags
-samtools fastq -T MM,ML ${unaligned_methyl_bam} | minimap2 --MD --cs=long -t ${in_cores} ${in_args} ${index_file} - | samtools view -@ ${in_cores} -bh - | samtools sort -@ ${in_cores} - > ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
+samtools fastq -T MM,ML ${unaligned_methyl_bam} | minimap2 --MD --cs -t ${in_cores} ${in_args} ${index_file} - | samtools view -@ ${in_cores} -bh - | samtools sort -@ ${in_cores} - > ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
 samtools index ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
 
 echo "Done."
