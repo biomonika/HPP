@@ -6,7 +6,7 @@ set -e
 source /opt/miniconda/etc/profile.d/conda.sh; 
 conda activate /public/home/mcechova/conda/methylation/
 
-in_cores=20 #number of processors to be used
+in_cores=200 #number of processors to be used
 
 unaligned_methyl_bam=$1
 DIR="$(dirname "${unaligned_methyl_bam}")" #output in the same directory where the input file is
@@ -33,7 +33,7 @@ fi
 #script based on the wdl file by Melissa Meredith
 #https://github.com/meredith705/ont_methylation/blob/32095600428d21bf53aef8a7ccc401b0f10a9145/tasks/minimap2.wdl
 
-samtools fastq -T MM,ML ${unaligned_methyl_bam} | winnowmap -I 8G -W ${meryl} -ax map-ont -y ${ref_file} - | samtools view -@ ${in_cores} -bh - | samtools sort -@ ${in_cores} - > ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
+samtools fastq -T MM,ML ${unaligned_methyl_bam} | winnowmap --cs -t ${in_cores} -I 8G -W ${meryl} -ax map-ont -y ${ref_file} - | samtools view -@ ${in_cores} -bh - | samtools sort -@ ${in_cores} - > ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
 samtools index ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
 
 echo "Done."
