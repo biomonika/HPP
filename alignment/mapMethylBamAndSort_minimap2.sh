@@ -16,7 +16,7 @@ ref_file=$2 #"/public/groups/migalab/mcechova/chm13v2.0.fa" #"GCA_000001405.15_G
 ref_name="$(basename -- $ref_file)"
 ref_name="${ref_name%.*}"
 
-in_args="-y -x map-ont -a --eqx -k 17 -K 10g" #minimap parameters appropriate for nanopore reads
+in_args="-y -x map-ont --MD --eqx --cs -Y -L -p0.1 -a -k 17 -K 10g" #minimap parameters appropriate for nanopore reads and secphase
 
 method="minimap2"
 
@@ -33,7 +33,7 @@ else
 fi
 
 #do the mapping with methylation tags
-samtools fastq -T MM,ML ${unaligned_methyl_bam} | minimap2 --MD --cs -t ${in_cores} ${in_args} ${index_file} - | samtools view -@ ${in_cores} -bh - | samtools sort -@ ${in_cores} - > ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
+samtools fastq -T MM,ML ${unaligned_methyl_bam} | minimap2 -t ${in_cores} ${in_args} ${index_file} - | samtools view -@ ${in_cores} -bh - | samtools sort -@ ${in_cores} - > ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
 samtools index ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
 
 echo "Done."
