@@ -7,7 +7,7 @@ source /opt/miniconda/etc/profile.d/conda.sh
 conda activate /public/home/mcechova/conda/hifiasm
 
 
-in_cores=200 #number of processors to be used
+in_cores=50 #number of processors to be used
 
 mapped_methyl_bam=$1 #provide the diploid alignment
 INPUT_DIR="$(dirname "${mapped_methyl_bam}")" #the same directory where the input file is
@@ -25,8 +25,8 @@ samtools sort -n -@${in_cores} ${mapped_methyl_bam} > ${INPUT_DIR}/${BAM_PREFIX}
 ## Phase reads for ONT
 docker run \
     -v ${INPUT_DIR}:${INPUT_DIR} \
-    mobinasri/secphase:v0.1 \
-    secphase -q -c -t20 -d 1e-2 -e 0.1 -b20 -m10 -s20 \
+    mobinasri/secphase:v0.2.0 \
+    secphase --ont \
     -i ${INPUT_DIR}/${BAM_PREFIX}.sorted.bam \
     -f ${INPUT_DIR}/${FASTA_PREFIX}.fa > ${INPUT_DIR}/${BAM_PREFIX}.secphase.log
 
@@ -36,7 +36,7 @@ echo "Phasing finished."
 docker run \
     -v ${INPUT_DIR}:${INPUT_DIR} \
     -v ${OUTPUT_DIR}:${OUTPUT_DIR} \
-    mobinasri/secphase:v0.1 \
+    mobinasri/secphase:v0.2.0 \
     correct_bam \
     -i ${INPUT_DIR}/${BAM_PREFIX}.bam \
     -P ${INPUT_DIR}/${BAM_PREFIX}.secphase.log \
