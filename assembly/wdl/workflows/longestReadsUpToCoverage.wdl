@@ -5,8 +5,8 @@ workflow longestReadsUpToCoverage{
     input {
         File fastq
         String fastq_name=basename(sub(sub(sub(fastq, "\\.gz$", ""), "\\.fasta$", ""), "\\.fa$", "")) #remove the file extension
-        Int genome_size
-        Int desired_coverage
+        String genome_size
+        String desired_coverage
         Int preemptible = 1
     }
 
@@ -41,7 +41,7 @@ workflow longestReadsUpToCoverage{
     parameter_meta {
         fastq: "The fastq reads to be subsampled"
         genome_size: "The genome size of the reference is basepairs [bps]"
-        desired_coverage: "The final desired coverage for the subset of the longest reads."
+        desired_coverage: "The final desired coverage for the subset of the longest reads. Please use an integer value."
     }
     meta {
         author: "Monika Cechova"
