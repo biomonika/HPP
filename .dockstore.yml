@@ -9,3 +9,9 @@ workflows:
    -  name: findAssemblyBreakpoints
       subclass: WDL
       primaryDescriptorPath: /assembly/wdl/workflows/findAssemblyBreakpoints.wdl
+   -  name: longestReadsUpToCoverage
+      subclass: WDL
+      primaryDescriptorPath: /assembly/wdl/workflows/longestReadsUpToCoverage.wdl
+      
+      
+      
