@@ -64,7 +64,7 @@ task runBioAwk {
         set -u
         set -o xtrace
 
-        cat ~{fastq} | bioawk -c fastx '{ print $name, length($seq)}' | sort -rgk2 >~{fastq_name}.read_lengths.txt
+        bioawk -c fastx '{ print $name, length($seq)}' ~{fastq} | sort -rgk2 >~{fastq_name}.read_lengths.txt
 
     >>>
 
