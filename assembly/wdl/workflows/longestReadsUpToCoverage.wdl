@@ -87,8 +87,8 @@ task runBioAwk {
 task findSubsetOfReads {
     input{
         File read_lengths
-        Int genome_size
-        Int desired_coverage
+        String genome_size
+        String desired_coverage
         Int memSizeGB=8
         Int diskSizeGB=8
         Int preemptible
