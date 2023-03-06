@@ -56,6 +56,10 @@ task runBioAwk {
         Int memSizeGB = 32
         Int preemptible
     }
+
+    Int file_size = ceil(size(fastq, "GB"))
+    Int diskSizeGB = 3 * file_size
+
     command <<<
 
         #handle potential errors and quit early
@@ -74,6 +78,7 @@ task runBioAwk {
 
     runtime {
         memory: memSizeGB + " GB"
+        disks: "local-disk " + diskSizeGB + " SSD"
         preemptible : preemptible
         docker: "quay.io/biocontainers/bioawk:1.0--hed695b0_5"
     }
@@ -84,6 +89,8 @@ task findSubsetOfReads {
         File read_lengths
         Int genome_size
         Int desired_coverage
+        Int memSizeGB=8
+        Int diskSizeGB=8
         Int preemptible
     }
 
@@ -131,6 +138,8 @@ task findSubsetOfReads {
 
     runtime {
         docker: "rocker/tidyverse"
+        memory: memSizeGB + " GB"
+        disks: "local-disk " + diskSizeGB + " SSD"
     }
 }
 
@@ -141,9 +150,12 @@ task subsampleFastq {
         String fastq_name
         File read_names
         Int memSizeGB = 32
-        Int threadCount = 32
         Int preemptible
     }
+
+    Int file_size = ceil(size(fastq, "GB"))
+    Int diskSizeGB = 3 * file_size
+
     command <<<
 
         #handle potential errors and quit early
@@ -163,12 +175,11 @@ task subsampleFastq {
 
     runtime {
         memory: memSizeGB + " GB"
-        cpu: threadCount
+        disks: "local-disk " + diskSizeGB + " SSD"
         preemptible : preemptible
         docker: "quay.io/biocontainers/seqtk:1.3--hed695b0_2"
     }
 }
-
 
 
 
