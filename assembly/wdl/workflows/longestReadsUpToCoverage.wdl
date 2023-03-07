@@ -103,7 +103,6 @@ task findSubsetOfReads {
         desired_coverage<-as.numeric(as.character(args[3]))
         read_lengths <-as.data.frame(read.table(filename))
         colnames(read_lengths)<-c("name","length")
-        read_lengths$length<-as.numeric(read_lengths$length)
 
         lengths<-read_lengths["length"]
         names<-read_lengths["name"]
