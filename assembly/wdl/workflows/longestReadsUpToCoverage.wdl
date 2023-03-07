@@ -3,43 +3,52 @@ version 1.0
 
 workflow longestReadsUpToCoverage{
     input {
-        File fastq
-        String fastq_name=basename(sub(sub(sub(fastq, "\\.gz$", ""), "\\.fasta$", ""), "\\.fa$", "")) #remove the file extension
+        Array[File] fastq_files
         String genome_size
         String desired_coverage
         Int preemptible = 1
     }
 
-    call runBioAwk {
-        input:
-            fastq=fastq,
-            fastq_name=fastq_name,
-            preemptible=preemptible
+    scatter (fastq in fastq_files) {
+        call runBioAwk {
+            input:
+                fastq=fastq,
+                memSizeGB=32,
+                preemptible=preemptible
+        }
+
+        call findSubsetOfReads {
+            input:
+                read_lengths=runBioAwk.read_lengths,
+                genome_size=genome_size,
+                desired_coverage=desired_coverage,
+                memSizeGB=32,
+                preemptible=preemptible
+        }
+
+        call subsampleFastq {
+            input:
+                fastq=fastq,
+                read_names=findSubsetOfReads.read_names,
+                memSizeGB=32,
+                preemptible=preemptible
+        }
     }
 
-    call findSubsetOfReads {
+    call concatenate {
         input:
-            read_lengths=runBioAwk.read_lengths,
-            genome_size=genome_size,
-            desired_coverage=desired_coverage,
-            preemptible=preemptible
-    }
-
-    call subsampleFastq {
-        input:
-            fastq=fastq,
-            fastq_name=fastq_name,
-            read_names=findSubsetOfReads.read_names,
-            preemptible=preemptible
+            subsampled_files=subsampleFastq.subsampledLongestReads,
+            memSizeGB=32,
+            preemptible=1
     }
 
     output {
-        File subsampledLongestReads = subsampleFastq.subsampledLongestReads
-        File summary = findSubsetOfReads.summary
+        File subsampledLongestReads = concatenate.subsampled_final
+        Array[File] summary = findSubsetOfReads.summary
     }
 
     parameter_meta {
-        fastq: "The fastq reads to be subsampled"
+        fastq_files: "The fastq reads to be subsampled"
         genome_size: "The genome size of the reference is basepairs [bps]"
         desired_coverage: "The final desired coverage for the subset of the longest reads. Please use an integer value."
     }
@@ -52,13 +61,12 @@ workflow longestReadsUpToCoverage{
 task runBioAwk {
     input{
         File fastq
-        String fastq_name
-        Int memSizeGB = 32
+        Int memSizeGB
+        Int diskSizeGB = ceil(size(fastq, "GB")) + 1
         Int preemptible
     }
 
-    Int file_size = ceil(size(fastq, "GB"))
-    Int diskSizeGB = 3 * file_size
+    String fastq_name=basename(sub(sub(sub(fastq, "\\.gz$", ""), "\\.fasta$", ""), "\\.fa$", "")) #remove the file extension
 
     command <<<
 
@@ -89,8 +97,8 @@ task findSubsetOfReads {
         File read_lengths
         String genome_size
         String desired_coverage
-        Int memSizeGB=8
-        Int diskSizeGB=8
+        Int memSizeGB
+        Int diskSizeGB = 8
         Int preemptible
     }
 
@@ -144,14 +152,13 @@ task findSubsetOfReads {
 task subsampleFastq {
     input{
         File fastq
-        String fastq_name
         File read_names
-        Int memSizeGB = 32
+        Int memSizeGB
+        Int diskSizeGB = ceil(size(fastq, "GB")) * 2
         Int preemptible
     }
 
-    Int file_size = ceil(size(fastq, "GB"))
-    Int diskSizeGB = 3 * file_size
+    String fastq_name=basename(sub(sub(sub(fastq, "\\.gz$", ""), "\\.fasta$", ""), "\\.fa$", "")) #remove the file extension
 
     command <<<
 
@@ -175,6 +182,40 @@ task subsampleFastq {
         disks: "local-disk " + diskSizeGB + " SSD"
         preemptible : preemptible
         docker: "quay.io/biocontainers/seqtk:1.3--hed695b0_2"
+    }
+}
+
+task concatenate {
+    input{
+        Array[File] subsampled_files
+        Int memSizeGB
+        Int preemptible
+    }
+
+    Int file_size = ceil(size(subsampled_files, "GB"))
+    Int diskSizeGB = 2 * file_size
+
+    command <<<
+
+        #handle potential errors and quit early
+        set -o pipefail
+        set -e
+        set -u
+        set -o xtrace
+
+        cat ~{sep=' ' subsampled_files} >concatenated.fastq.gz
+
+    >>>
+
+    output {
+        File subsampled_final="concatenated.fastq.gz"
+    }
+
+    runtime {
+        memory: memSizeGB + " GB"
+        disks: "local-disk " + diskSizeGB + " SSD"
+        preemptible : preemptible
+        docker: "ubuntu:18.04"
     }
 }
 
