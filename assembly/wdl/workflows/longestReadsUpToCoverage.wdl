@@ -104,7 +104,7 @@ task findSubsetOfReads {
         read_lengths <-as.data.frame(read.table(filename))
         colnames(read_lengths)<-c("name","length")
 
-        lengths<-read_lengths["length"]
+        lengths<-as.numeric(as.character(read_lengths["length"]))
         names<-read_lengths["name"]
 
         sufficient_reads<-(cumsum(lengths)/genome_size)>desired_coverage #cummulative sum of reads sorted from the longest to the shortest
