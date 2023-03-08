@@ -62,7 +62,7 @@ task runBioAwk {
     input{
         File fastq
         Int memSizeGB
-        Int diskSizeGB = ceil(size(fastq, "GB")) + 1
+        Int diskSizeGB = ceil(size(fastq, "GB")) + 32
         Int preemptible
     }
 
@@ -98,7 +98,7 @@ task findSubsetOfReads {
         String genome_size
         String desired_coverage
         Int memSizeGB
-        Int diskSizeGB = 8
+        Int diskSizeGB = 32
         Int preemptible
     }
 
