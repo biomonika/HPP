@@ -33,17 +33,25 @@ workflow longestReadsUpToCoverage{
                 memSizeGB=32,
                 preemptible=preemptible
         }
+
+        call compressFastq {
+            input:
+                fastqSumbsampled=subsampleFastq.subsampledLongestReads,
+                memSizeGB=32,
+                threadCount=8,
+                preemptible=preemptible
+        }
     }
 
     call concatenate {
         input:
-            subsampled_files=subsampleFastq.subsampledLongestReads,
+            subsampled_files=compressFastq.compressedSubsampledLongestReads,
             memSizeGB=32,
             preemptible=1
     }
 
     output {
-        File subsampledLongestReads = concatenate.subsampled_final
+        File compressFastq = concatenate.subsampled_final
         Array[File] summary = findSubsetOfReads.summary
     }
 
@@ -62,7 +70,7 @@ task runBioAwk {
     input{
         File fastq
         Int memSizeGB
-        Int diskSizeGB = ceil(size(fastq, "GB")) + 32
+        Int diskSizeGB = ceil(size(fastq, "GB")) + 64
         Int preemptible
     }
 
@@ -98,7 +106,7 @@ task findSubsetOfReads {
         String genome_size
         String desired_coverage
         Int memSizeGB
-        Int diskSizeGB = 32
+        Int diskSizeGB = 64
         Int preemptible
     }
 
@@ -154,7 +162,7 @@ task subsampleFastq {
         File fastq
         File read_names
         Int memSizeGB
-        Int diskSizeGB = ceil(size(fastq, "GB")) * 2
+        Int diskSizeGB = ceil(size(fastq, "GB")) * 2 + 64
         Int preemptible
     }
 
@@ -168,13 +176,13 @@ task subsampleFastq {
         set -u
         set -o xtrace
 
-        seqtk subseq ~{fastq} ~{read_names} | gzip >~{fastq_name}.subsampledLongestReads.fastq.gz
+        seqtk subseq ~{fastq} ~{read_names} >~{fastq_name}.subsampledLongestReads.fastq
         
 
     >>>
 
     output {
-        File subsampledLongestReads = "${fastq_name}.subsampledLongestReads.fastq.gz"
+        File subsampledLongestReads = "${fastq_name}.subsampledLongestReads.fastq"
     }
 
     runtime {
@@ -182,6 +190,41 @@ task subsampleFastq {
         disks: "local-disk " + diskSizeGB + " SSD"
         preemptible : preemptible
         docker: "quay.io/biocontainers/seqtk:1.3--hed695b0_2"
+    }
+}
+
+task compressFastq {
+    input{
+        File fastqSumbsampled
+        Int memSizeGB
+        Int threadCount
+        Int diskSizeGB = ceil(size(fastqSumbsampled, "GB")) * 2 + 64
+        Int preemptible
+    }
+
+    String fastq_name=basename(fastqSumbsampled)
+
+    command <<<
+
+        #handle potential errors and quit early
+        set -o pipefail
+        set -e
+        set -u
+        set -o xtrace
+
+        cat ~{fastqSumbsampled} | pigz -p ~{threadCount} >~{fastq_name}.gz        
+
+    >>>
+
+    output {
+        File compressedSubsampledLongestReads = "${fastq_name}.gz"
+    }
+
+    runtime {
+        memory: memSizeGB + " GB"
+        disks: "local-disk " + diskSizeGB + " SSD"
+        preemptible : preemptible
+        docker: "quay.io/biocontainers/pigz:2.3.4"
     }
 }
 
