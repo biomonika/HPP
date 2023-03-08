@@ -115,13 +115,13 @@ task findSubsetOfReads {
         lengths<-read_lengths["length"]
         names<-read_lengths["name"]
 
-        if ((genome_size*desired_coverage) > sum(lengths)) {
+        if ((genome_size*desired_coverage) > sum(lengths/1)) {
 
             summary<-"The desired coverage for this genome size exceeds the number of available basepairs. The subsampling is not possible."
             sufficient_subset<-names
 
         } else {
-            sufficient_reads<-(cumsum(lengths)/genome_size)>desired_coverage #cummulative sum of reads sorted from the longest to the shortest
+            sufficient_reads<-(cumsum(lengths/1)/genome_size)>desired_coverage #cummulative sum of reads sorted from the longest to the shortest
             smallest_number_of_reads_needed<-min(which(sufficient_reads==TRUE))
             summary<-paste("With genome size",genome_size,"the total number of the longest reads needed is", smallest_number_of_reads_needed, "with the total cummulative length of",sum(head(lengths,smallest_number_of_reads_needed)),"bps to achieve the minimum coverage of",desired_coverage,"in the subsampled dataset.")
 
