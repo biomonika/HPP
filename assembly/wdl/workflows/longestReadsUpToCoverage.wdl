@@ -38,7 +38,7 @@ workflow longestReadsUpToCoverage{
             input:
                 fastqSumbsampled=subsampleFastq.subsampledLongestReads,
                 memSizeGB=32,
-                threadCount=8,
+                threadCount=32,
                 preemptible=preemptible
         }
     }
