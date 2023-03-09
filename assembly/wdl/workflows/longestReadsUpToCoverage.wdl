@@ -9,11 +9,11 @@ workflow longestReadsUpToCoverage{
         Int preemptible = 1
     }
 
-    scatter (myFile in files_to_subsample) {
+    scatter (myfile in files_to_subsample) {
         
         call formatInputFile {
             input:
-                inputFile=myFile,
+                inputFile=myfile,
                 memSizeGB=32,
                 threadCount=32,
                 preemptible=preemptible
@@ -43,7 +43,7 @@ workflow longestReadsUpToCoverage{
                 preemptible=preemptible
         }
 
-        call compressFastq {
+        call compressedFastq {
             input:
                 fastqSumbsampled=subsampleFastq.fastqSumbsampled,
                 memSizeGB=32,
@@ -54,7 +54,7 @@ workflow longestReadsUpToCoverage{
 
     call concatenate {
         input:
-            subsampled_files=compressFastq.compressedLongestReads,
+            subsampled_files=compressedFastq.compressedLongestReads,
             memSizeGB=32,
             preemptible=1
     }
@@ -236,7 +236,7 @@ task subsampleFastq {
     }
 }
 
-task compressFastq {
+task compressedFastq {
     input{
         File fastqSumbsampled
         Int memSizeGB
