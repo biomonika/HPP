@@ -79,7 +79,7 @@ task formatInputFile {
     input{
         File inputFile
         Int memSizeGB
-        Int diskSizeGB = ceil(size(inputFile, "GB")) * 2 + 64
+        Int diskSizeGB = ceil(size(inputFile, "GB")) * 3
         Int threadCount
         Int preemptible
         }
@@ -205,7 +205,7 @@ task subsampleFastq {
         File fastq
         File read_names
         Int memSizeGB
-        Int diskSizeGB = ceil(size(fastq, "GB")) * 2 + 64
+        Int diskSizeGB = ceil(size(fastq, "GB")) * 3
         Int preemptible
     }
 
@@ -241,7 +241,7 @@ task compressedFastq {
         File fastqSumbsampled
         Int memSizeGB
         Int threadCount
-        Int diskSizeGB = ceil(size(fastqSumbsampled, "GB")) * 2 + 64
+        Int diskSizeGB = ceil(size(fastqSumbsampled, "GB")) * 3
         Int preemptible
     }
 
@@ -279,7 +279,7 @@ task concatenate {
     }
 
     Int file_size = ceil(size(subsampled_files, "GB"))
-    Int diskSizeGB = 2 * file_size + 64
+    Int diskSizeGB = 3 * file_size
 
     command <<<
 
