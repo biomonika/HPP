@@ -3,16 +3,25 @@ version 1.0
 
 workflow longestReadsUpToCoverage{
     input {
-        Array[File] fastq_files
+        Array[File] files_to_subsample
         String genome_size
         String desired_coverage
         Int preemptible = 1
     }
 
-    scatter (fastq in fastq_files) {
+    scatter (myFile in files_to_subsample) {
+        
+        call formatInputFile {
+            input:
+                inputFile=myFile,
+                memSizeGB=32,
+                threadCount=32,
+                preemptible=preemptible
+        }
+
         call runBioAwk {
             input:
-                fastq=fastq,
+                fastq=formatInputFile.fastq,
                 memSizeGB=32,
                 preemptible=preemptible
         }
@@ -28,7 +37,7 @@ workflow longestReadsUpToCoverage{
 
         call subsampleFastq {
             input:
-                fastq=fastq,
+                fastq=formatInputFile.fastq,
                 read_names=findSubsetOfReads.read_names,
                 memSizeGB=32,
                 preemptible=preemptible
@@ -51,12 +60,12 @@ workflow longestReadsUpToCoverage{
     }
 
     output {
-        File compressFastq = concatenate.subsampled_final
         Array[File] summary = findSubsetOfReads.summary
+        File compressFastq = concatenate.subsampled_final
     }
 
     parameter_meta {
-        fastq_files: "The fastq reads to be subsampled"
+        files_to_subsample: "The fastq reads to be subsampled"
         genome_size: "The genome size of the reference is basepairs [bps]"
         desired_coverage: "The final desired coverage for the subset of the longest reads. Please use an integer value."
     }
@@ -64,6 +73,40 @@ workflow longestReadsUpToCoverage{
         author: "Monika Cechova"
         email: "mcechova@ucsc.edu"
     }
+}
+
+task formatInputFile {
+    input{
+        File inputFile
+        Int memSizeGB
+        Int diskSizeGB = ceil(size(inputFile, "GB")) * 2 + 64
+        Int threadCount
+        Int preemptible
+        }
+
+        String fileName=basename(sub(sub(sub(sub(sub(sub(inputFile, "\\.fasta$", ""), "\\.fa$", ""), "\\.gz$", ""), "\\.bam$", ""), "\\.fastq$", ""), "\\.fq$", "")) #remove the file extension
+
+    command <<<
+
+        if [[ ~{inputFile} == *bam ]]; then
+            samtools fastq -@ ~{threadCount} ~{inputFile} > ~{fileName}.fastq
+        else
+            cat ~{inputFile} > ~{fileName}.fastq
+        fi
+    >>>
+
+    output {
+         File fastq = "${fileName}.fastq"
+    }
+
+    runtime {
+        memory: memSizeGB + "GB"
+        cpu: threadCount
+        disks: "local-disk " + diskSizeGB + " SSD"
+        docker: "quay.io/biocontainers/samtools:1.6--hcd7b337_9"
+        preemptible: 1
+    }
+
 }
 
 task runBioAwk {
@@ -261,6 +304,5 @@ task concatenate {
         docker: "ubuntu:18.04"
     }
 }
-
 
 
