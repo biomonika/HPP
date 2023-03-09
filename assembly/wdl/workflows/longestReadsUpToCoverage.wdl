@@ -96,7 +96,7 @@ task formatInputFile {
     >>>
 
     output {
-         File fastq = "${fileName}.fastq"
+         File fastq = "~{fileName}.fastq"
     }
 
     runtime {
@@ -132,7 +132,7 @@ task runBioAwk {
     >>>
 
     output {
-        File read_lengths="${fastq_name}.read_lengths.txt"
+        File read_lengths="~{fastq_name}.read_lengths.txt"
     }
 
     runtime {
@@ -225,7 +225,7 @@ task subsampleFastq {
     >>>
 
     output {
-        File fastqSumbsampled = "${fastq_name}.subsampledLongestReads.fastq"
+        File fastqSumbsampled = "~{fastq_name}.subsampledLongestReads.fastq"
     }
 
     runtime {
@@ -260,7 +260,7 @@ task compressFastq {
     >>>
 
     output {
-        File compressedLongestReads = "${fastq_name}.gz"
+        File compressedLongestReads = "~{fastq_name}.gz"
     }
 
     runtime {
