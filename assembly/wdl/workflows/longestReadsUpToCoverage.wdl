@@ -117,7 +117,7 @@ task findSubsetOfReads {
         filename<-as.character(args[1])
         genome_size<-as.numeric(as.character(args[2]))
         desired_coverage<-as.numeric(as.character(args[3]))
-        read_lengths <-as.data.frame(read.table(filename))
+        read_lengths <-as.data.frame(read.table(filename, header=FALSE, sep="\t"))
         colnames(read_lengths)<-c("name","length")
 
         lengths<-read_lengths["length"]
@@ -236,7 +236,7 @@ task concatenate {
     }
 
     Int file_size = ceil(size(subsampled_files, "GB"))
-    Int diskSizeGB = 2 * file_size
+    Int diskSizeGB = 2 * file_size + 64
 
     command <<<
 
