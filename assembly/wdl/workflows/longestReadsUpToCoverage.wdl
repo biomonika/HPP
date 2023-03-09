@@ -45,7 +45,7 @@ workflow longestReadsUpToCoverage{
 
         call compressFastq {
             input:
-                fastqSumbsampled=subsampleFastq.subsampledLongestReads,
+                fastqSumbsampled=subsampleFastq.fastqSumbsampled,
                 memSizeGB=32,
                 threadCount=32,
                 preemptible=preemptible
@@ -54,7 +54,7 @@ workflow longestReadsUpToCoverage{
 
     call concatenate {
         input:
-            subsampled_files=compressFastq.compressedSubsampledLongestReads,
+            subsampled_files=compressFastq.compressedLongestReads,
             memSizeGB=32,
             preemptible=1
     }
@@ -225,7 +225,7 @@ task subsampleFastq {
     >>>
 
     output {
-        File subsampledLongestReads = "${fastq_name}.subsampledLongestReads.fastq"
+        File fastqSumbsampled = "${fastq_name}.subsampledLongestReads.fastq"
     }
 
     runtime {
@@ -260,7 +260,7 @@ task compressFastq {
     >>>
 
     output {
-        File compressedSubsampledLongestReads = "${fastq_name}.gz"
+        File compressedLongestReads = "${fastq_name}.gz"
     }
 
     runtime {
