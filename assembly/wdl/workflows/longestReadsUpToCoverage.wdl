@@ -14,8 +14,8 @@ workflow longestReadsUpToCoverage{
         call formatInputFile {
             input:
                 inputFile=myfile,
-                memSizeGB=32,
-                threadCount=32,
+                memSizeGB=64,
+                threadCount=8,
                 preemptible=preemptible
         }
 
