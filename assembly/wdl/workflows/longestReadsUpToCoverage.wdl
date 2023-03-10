@@ -103,7 +103,7 @@ task formatInputFile {
         memory: memSizeGB + "GB"
         cpu: threadCount
         disks: "local-disk " + diskSizeGB + " SSD"
-        docker: "quay.io/biocontainers/samtools:1.6--hcd7b337_9"
+        docker: "quay.io/biocontainers/samtools:1.16.1--h6899075_1"
         preemptible: 1
     }
 
