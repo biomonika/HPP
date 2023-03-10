@@ -79,7 +79,7 @@ task formatInputFile {
     input{
         File inputFile
         Int memSizeGB
-        Int diskSizeGB = ceil(size(inputFile, "GB")) * 3
+        Int diskSizeGB = ceil(size(inputFile, "GB")) * 4
         Int threadCount
         Int preemptible
         }
@@ -87,6 +87,8 @@ task formatInputFile {
         String fileName=basename(sub(sub(sub(sub(sub(sub(inputFile, "\\.fasta$", ""), "\\.fa$", ""), "\\.gz$", ""), "\\.bam$", ""), "\\.fastq$", ""), "\\.fq$", "")) #remove the file extension
 
     command <<<
+    
+        echo `df -h .`
 
         if [[ ~{inputFile} == *bam ]]; then
             samtools fastq -@ ~{threadCount} ~{inputFile} > ~{fileName}.fastq
