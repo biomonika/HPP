@@ -331,7 +331,7 @@ task generateAssemblyEdges {
     input{
         File assembly
         String assembly_name
-        Int memSizeGB = 32
+        Int memSizeGB = 64
         Int preemptible
     }
     command <<<
