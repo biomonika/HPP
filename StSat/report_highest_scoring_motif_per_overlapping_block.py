@@ -1,5 +1,6 @@
 import sys
 import re
+import numpy as np
 
 def extract_number(string_with_percentage):
     # extract percentage using regular expression
@@ -22,8 +23,20 @@ def parse_chunks(input_str):
             if (len(key_value) == 13) and (not key_value[0].startswith("#")) :
                 #print(key_value)
                 motif = key_value[1]
+                seqLen = int(key_value[7]) 
                 mRatio = extract_number(key_value[8]) 
-                array_of_mratios.append({'line': line, 'mRatio': mRatio})
+                array_of_mratios.append({'line': line, 'mRatio': mRatio,'seqLen': seqLen})
+        min_length = min(array_of_mratios, key=lambda x: x['seqLen'])['seqLen'] #find the smallest seqLen in the chunk
+        max_length = max(array_of_mratios, key=lambda x: x['seqLen'])['seqLen'] #find the largest seqLen in the chunk
+        in_between=int(max_length-round((max_length-min_length)/4,0)) #decide on the seqLen threshold below which the entry should be removed
+
+        #print(str(len(array_of_mratios)))
+        #remove entries where the seqLen is not sufficient
+        for item in array_of_mratios:
+            if item['seqLen'] < in_between:
+                array_of_mratios.remove(item)
+        #print(str(len(array_of_mratios)))
+
         max_mratio = max(array_of_mratios, key=lambda x: x['mRatio'])['mRatio'] #find the biggest mRatio in the chunk
         #print("MAX IS:")
         #print(str(max_mratio))
