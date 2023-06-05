@@ -1,7 +1,10 @@
+import sys
 import pysam
-samfile = pysam.AlignmentFile("chrX.grandfather.blue.bam", "rb")
-output_5hmC = pysam.AlignmentFile("output_5hmC.bam", "wb", template=samfile)
-output_5mC = pysam.AlignmentFile("output_5mC.bam", "wb", template=samfile)
+
+filename = sys.argv[1]
+samfile = pysam.AlignmentFile(filename, "rb")
+output_5hmC = pysam.AlignmentFile(filename+".output_5hmC.bam", "wb", template=samfile)
+output_5mC = pysam.AlignmentFile(filename+".output_5mC.bam", "wb", template=samfile)
 
 for read in samfile:
     #print(read.query_name)
