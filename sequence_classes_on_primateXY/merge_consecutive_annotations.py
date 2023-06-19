@@ -1,4 +1,4 @@
-#if an unannotated region neighbors two regions with the same annotation, then it should also have that annotation
+#if two consecutive regions have the same annotation, then they should be merged into a single region
 
 def merge_bed(file_path):
     merged_rows = []
