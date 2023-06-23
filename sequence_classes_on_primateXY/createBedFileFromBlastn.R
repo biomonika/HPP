@@ -31,15 +31,12 @@ parseBlastn <- function(file) { # create a function with the name my_function
   
   origin_without_self<-origin[!(start_within | end_within),] #exclude mappings to the coordinates from which the sequence was subsampled
   
-  transformed_identity<-origin_without_self %>% group_by(sstart) %>% 
+  transformed_identity<-origin_without_self %>% group_by(start) %>% 
   arrange(pident, .by_group = TRUE) %>%
   mutate(max_identity = max(pident))
   
-  bed_file<-transformed_identity[,c("chr","sstart","max_identity")]
+  bed_file<-transformed_identity[,c("chr","start","end","max_identity")]
   bed_file<-bed_file %>% distinct()
-  bed_file$sstart<-bed_file$sstart-1
-  bed_file$ssend<-bed_file$sstart+1
-  bed_file<-bed_file[,c("chr","sstart","ssend","max_identity")]
   
   return(bed_file)
 }
