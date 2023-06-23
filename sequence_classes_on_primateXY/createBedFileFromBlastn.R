@@ -3,6 +3,7 @@
 
 require(tidyr)
 require(dplyr)
+options(scipen=999)
 
 args <- commandArgs(trailingOnly = TRUE)
 file <- args[1]
