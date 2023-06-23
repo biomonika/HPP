@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
-set -x
+#set -x
 
 #At the start, we have the following files:
 
 #merged.repeats.species.bed => merged coordinates of the continous stretches of repeat sequences
-#ampliconic.bed => merged coordinates of the regions with high intrachromosomal similarity and palindromes
+#ampliconic.bed => merged coordinates of the regions with high intrachromosomal similarity
 #PARs.bed => coordinates of pseudoautozomal regions from Bob Harris
 #XDEG_genes.bed => coordinates of X-degenerate genes from Karol Pal
 #AMPL_genes.bed => coordinates of ampliconic genes from Karol Pal
@@ -70,14 +70,21 @@ awk 'BEGIN {FS=OFS="\t"} { $4 = "fill_color=purple"; print }' repeats_without_PA
 cat PARs.txt XDEG_subtracted.txt ampliconic_subtracted.txt OTHER.txt repeats_subtracted.txt | sort -V -k1,1 -k2,2 >circos.all.sequence.classes.bed
 python fill_gray_class_if_possible.py #fill the gray
 python merge_consecutive_annotations.py #merge the redundant annotation (consecutive rows with the same annotation)
+python drop_short_annotations.py #merge short annotations (<=100bp) with their neigborhood regions; output circos.all.sequence.classes.final.bed
+
+#GENES FOUND IN INAPPROPRIATE REGIONS:
+echo "XDEG genes in AMPL regions:"
+bedtools intersect -a XDEG_genes.bed -b ampliconic_subtracted.bed
+echo "AMPL genes in XDEG regions:"
+bedtools intersect -a AMPL_genes.bed -b XDEG_subtracted.bed
 
 #REWRITE ANNOTATION INTO A HUMAN READABLE FORMAT
 
-grep "hs1" circos.all.sequence.classes.merged.bed | sed -e 's/hs1/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.human.bed
-grep "hs2" circos.all.sequence.classes.merged.bed | sed -e 's/hs2/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.chimpanzee.bed
-grep "hs3" circos.all.sequence.classes.merged.bed | sed -e 's/hs3/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.bonobo.bed
-grep "hs4" circos.all.sequence.classes.merged.bed | sed -e 's/hs4/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.gorilla.bed
-grep "hs5" circos.all.sequence.classes.merged.bed | sed -e 's/hs5/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.sorang.bed
-grep "hs6" circos.all.sequence.classes.merged.bed | sed -e 's/hs6/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.borang.bed
-grep "hs7" circos.all.sequence.classes.merged.bed | sed -e 's/hs7/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.gibbon.bed
+grep "hs1" circos.all.sequence.classes.final.bed | sed -e 's/hs1/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.human.bed
+grep "hs2" circos.all.sequence.classes.final.bed | sed -e 's/hs2/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.chimpanzee.bed
+grep "hs3" circos.all.sequence.classes.final.bed | sed -e 's/hs3/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.bonobo.bed
+grep "hs4" circos.all.sequence.classes.final.bed | sed -e 's/hs4/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.gorilla.bed
+grep "hs5" circos.all.sequence.classes.final.bed | sed -e 's/hs5/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.sorang.bed
+grep "hs6" circos.all.sequence.classes.final.bed | sed -e 's/hs6/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.borang.bed
+grep "hs7" circos.all.sequence.classes.final.bed | sed -e 's/hs7/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.gibbon.bed
 
