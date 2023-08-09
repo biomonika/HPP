@@ -13,7 +13,8 @@ def check_previous_next(file_path):
         previous_line = lines[i-1].strip().split('\t')[3]
         next_line = lines[i+1].strip().split('\t')[3]
 
-        if (previous_line == next_line) and (current_line=="fill_color=gray"):
+        # (#d9d8d8==Gray==Other)
+        if (previous_line == next_line) and (current_line=="fill_color=#d9d8d8"):
             #print(lines[i-1])
             #print(lines[i])
             #print(lines[i+1])
