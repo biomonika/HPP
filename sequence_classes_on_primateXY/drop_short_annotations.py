@@ -23,10 +23,11 @@ def merge_bed(file_path):
                 #print("found match, should be merged")
                 #print(previous_row)
                 #print(row)
-                final_color="fill_color=gray"
+                final_color="fill_color=#d9d8d8"
 
-                if ((previous_color!="fill_color=gray") and (color!="fill_color=gray")):
-                    #both of them are color other than gray, attach to the longer interval
+                # (#d9d8d8==Gray==Other)
+                if ((previous_color!="fill_color=#d9d8d8") and (color!="fill_color=#d9d8d8")):
+                    #both of them are color other than gray, attach to the longer interval 
                     if (previous_distance>distance):
                         #previous distance is bigger, merge distance to previous distance
                         final_color=previous_color
@@ -35,8 +36,8 @@ def merge_bed(file_path):
                         final_color=color
 
                 else: 
-                    #only one of them is color other than gray, choose the one that is not gray
-                    if (previous_color=="fill_color=gray"):
+                    #only one of them is color other than gray, choose the one that is not gray (#d9d8d8==Gray==Other)
+                    if (previous_color=="fill_color=#d9d8d8"):
                         final_color=color
                     else:
                         final_color=previous_color
