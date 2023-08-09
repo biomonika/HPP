@@ -54,11 +54,11 @@ echo "Print potential overlaps to make sure the separation into classes worked:"
 bedtools multiinter -header -i PARs.bed XDEG_subtracted.bed ampliconic_subtracted.bed OTHER.bed repeats_without_PARs.bed  | awk '{if ($4>1) print}'
 
 #assign the correct colors for each sequence class
-awk 'BEGIN {FS=OFS="\t"} { $4 = "fill_color=green"; print }' PARs.bed >PARs.txt
-awk 'BEGIN {FS=OFS="\t"} { $4 = "fill_color=yellow"; print }' XDEG_subtracted.bed >XDEG_subtracted.txt
-awk 'BEGIN {FS=OFS="\t"} { $4 = "fill_color=blue"; print }' ampliconic_subtracted.bed >ampliconic_subtracted.txt
-awk 'BEGIN {FS=OFS="\t"} { $4 = "fill_color=gray"; print }' OTHER.bed >OTHER.txt
-awk 'BEGIN {FS=OFS="\t"} { $4 = "fill_color=purple"; print }' repeats_without_PARs.bed >repeats_subtracted.txt
+awk 'BEGIN {FS=OFS="\t"} { $4 = "fill_color=#97cb99"; print }' PARs.bed >PARs.txt
+awk 'BEGIN {FS=OFS="\t"} { $4 = "fill_color=#feef58"; print }' XDEG_subtracted.bed >XDEG_subtracted.txt
+awk 'BEGIN {FS=OFS="\t"} { $4 = "fill_color=#89c0e8"; print }' ampliconic_subtracted.bed >ampliconic_subtracted.txt
+awk 'BEGIN {FS=OFS="\t"} { $4 = "fill_color=#d9d8d8"; print }' OTHER.bed >OTHER.txt
+awk 'BEGIN {FS=OFS="\t"} { $4 = "fill_color=#6a4a1d"; print }' repeats_without_PARs.bed >repeats_subtracted.txt
 
 #Finally, plot the following files
 #PARs.txt => coordinates of pseudoautozomal regions from Bob Harris
@@ -80,11 +80,11 @@ bedtools intersect -a AMPL_genes.bed -b XDEG_subtracted.bed
 
 #REWRITE ANNOTATION INTO A HUMAN READABLE FORMAT
 
-grep "hs1" circos.all.sequence.classes.final.bed | sed -e 's/hs1/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.human.bed
-grep "hs2" circos.all.sequence.classes.final.bed | sed -e 's/hs2/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.chimpanzee.bed
-grep "hs3" circos.all.sequence.classes.final.bed | sed -e 's/hs3/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.bonobo.bed
-grep "hs4" circos.all.sequence.classes.final.bed | sed -e 's/hs4/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.gorilla.bed
-grep "hs5" circos.all.sequence.classes.final.bed | sed -e 's/hs5/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.sorang.bed
-grep "hs6" circos.all.sequence.classes.final.bed | sed -e 's/hs6/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.borang.bed
-grep "hs7" circos.all.sequence.classes.final.bed | sed -e 's/hs7/chrY/' -e 's/fill_color=green/PAR/' -e 's/fill_color=yellow/XDEG/' -e 's/fill_color=blue/AMPLICONIC/' -e 's/fill_color=purple/SATELLITE/' -e 's/fill_color=gray/OTHER/' >SEQUENCE_CLASSES.gibbon.bed
+grep "hs1" circos.all.sequence.classes.final.bed | sed -e 's/hs1/chrY/' -e 's/fill_color=#97cb99/PAR/' -e 's/fill_color=#feef58/XDEG/' -e 's/fill_color=#89c0e8/AMPLICONIC/' -e 's/fill_color=#6a4a1d/SATELLITE/' -e 's/fill_color=#d9d8d8/OTHER/' -e 's/fill_color=#eea9ba/XTR/' >SEQUENCE_CLASSES.human.bed
+grep "hs2" circos.all.sequence.classes.final.bed | sed -e 's/hs2/chrY/' -e 's/fill_color=#97cb99/PAR/' -e 's/fill_color=#feef58/XDEG/' -e 's/fill_color=#89c0e8/AMPLICONIC/' -e 's/fill_color=#6a4a1d/SATELLITE/' -e 's/fill_color=#d9d8d8/OTHER/' -e 's/fill_color=#eea9ba/XTR/' >SEQUENCE_CLASSES.chimpanzee.bed
+grep "hs3" circos.all.sequence.classes.final.bed | sed -e 's/hs3/chrY/' -e 's/fill_color=#97cb99/PAR/' -e 's/fill_color=#feef58/XDEG/' -e 's/fill_color=#89c0e8/AMPLICONIC/' -e 's/fill_color=#6a4a1d/SATELLITE/' -e 's/fill_color=#d9d8d8/OTHER/' -e 's/fill_color=#eea9ba/XTR/' >SEQUENCE_CLASSES.bonobo.bed
+grep "hs4" circos.all.sequence.classes.final.bed | sed -e 's/hs4/chrY/' -e 's/fill_color=#97cb99/PAR/' -e 's/fill_color=#feef58/XDEG/' -e 's/fill_color=#89c0e8/AMPLICONIC/' -e 's/fill_color=#6a4a1d/SATELLITE/' -e 's/fill_color=#d9d8d8/OTHER/' -e 's/fill_color=#eea9ba/XTR/' >SEQUENCE_CLASSES.gorilla.bed
+grep "hs5" circos.all.sequence.classes.final.bed | sed -e 's/hs5/chrY/' -e 's/fill_color=#97cb99/PAR/' -e 's/fill_color=#feef58/XDEG/' -e 's/fill_color=#89c0e8/AMPLICONIC/' -e 's/fill_color=#6a4a1d/SATELLITE/' -e 's/fill_color=#d9d8d8/OTHER/' -e 's/fill_color=#eea9ba/XTR/' >SEQUENCE_CLASSES.sorang.bed
+grep "hs6" circos.all.sequence.classes.final.bed | sed -e 's/hs6/chrY/' -e 's/fill_color=#97cb99/PAR/' -e 's/fill_color=#feef58/XDEG/' -e 's/fill_color=#89c0e8/AMPLICONIC/' -e 's/fill_color=#6a4a1d/SATELLITE/' -e 's/fill_color=#d9d8d8/OTHER/' -e 's/fill_color=#eea9ba/XTR/' >SEQUENCE_CLASSES.borang.bed
+grep "hs7" circos.all.sequence.classes.final.bed | sed -e 's/hs7/chrY/' -e 's/fill_color=#97cb99/PAR/' -e 's/fill_color=#feef58/XDEG/' -e 's/fill_color=#89c0e8/AMPLICONIC/' -e 's/fill_color=#6a4a1d/SATELLITE/' -e 's/fill_color=#d9d8d8/OTHER/' -e 's/fill_color=#eea9ba/XTR/' >SEQUENCE_CLASSES.gibbon.bed
 
