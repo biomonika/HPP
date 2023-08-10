@@ -1,4 +1,4 @@
-#This set of script annotates sequence classes on the X and Y chromosome of primates species
+##This set of script annotates sequence classes on the X and Y chromosome of primates species
 
 The scripts should be run in the following order:
 1) run prepare_ampliconic_regions.sh (the script analyzes the results of the intrachromosomal similarity as revealed by blast, and filters them) )
