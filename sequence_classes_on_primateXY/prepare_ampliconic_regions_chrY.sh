@@ -5,7 +5,7 @@ set -x
 #this script reports the identity of the window anywhere on the Y, other than the position it originates from, provided it exists
 for a in blastn*WideHardmasked.fasta.txt; do echo $a; Rscript createBedFileFromBlastn.R $a; done;
 
-#merge the neigboring hits, and only keep the consecutive regions larger than 250000
+#merge the neigboring hits, and only keep the consecutive regions larger than 90000
 for a in blastn*WideHardmasked.fasta.bed; do cat $a | sort -V -k1,1 -k2,2 | bedtools merge -d 100000 | awk '{ if (($3-$2)>90000) print;}' >${a}.ampliconic.bed; done;
 
 #merge into a single file for circos
