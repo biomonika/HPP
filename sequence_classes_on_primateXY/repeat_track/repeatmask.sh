@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=repeatmask.20230619
+#SBATCH --job-name=repeatmask.20230627
 #SBATCH --partition=main
 #SBATCH --mail-user=mcechova@ucsc.edu
 #SBATCH --nodes=1
 #SBATCH --mem=500gb
 #SBATCH --ntasks=128
 #SBATCH --cpus-per-task=1
-#SBATCH --output=repeatmask.20230619.%j.log
+#SBATCH --output=repeatmask.20230627.%j.log
 #SBATCH --time=168:00:00
 
 set -e
@@ -56,7 +56,7 @@ cat repeats.chrY.gorilla.merged.bed | sed -e 's/chrY/hs4/' >>merged.chrY.repeats
 cat repeats.chrY.sorang.merged.bed | sed -e 's/chrY/hs5/' >>merged.chrY.repeats.species.bed.tmp
 cat repeats.chrY.borang.merged.bed | sed -e 's/chrY/hs6/' >>merged.chrY.repeats.species.bed.tmp
 cat repeats.chrY.gibbon.merged.bed | sed -e 's/chrY/hs7/' >>merged.chrY.repeats.species.bed.tmp
-cat merged.chrY.repeats.species.bed.tmp | awk '{print $0 "\tfill_color=purple"}' | sed 's/ /\t/g' | sort -V -k1,1 -k2,2 >merged.chrY.repeats.species.bed
+cat merged.chrY.repeats.species.bed.tmp | awk '{print $0 "\tfill_color=#6a4a1d"}' | sed 's/ /\t/g' | sort -V -k1,1 -k2,2 >merged.chrY.repeats.species.bed
 rm merged.chrY.repeats.species.bed.tmp
 #X CHROMOSOME
 cat repeats.chrX.human.merged.bed | sed -e 's/chrX/hs1/' >merged.chrX.repeats.species.bed.tmp
@@ -66,7 +66,7 @@ cat repeats.chrX.gorilla.merged.bed | sed -e 's/chrX/hs4/' >>merged.chrX.repeats
 cat repeats.chrX.sorang.merged.bed | sed -e 's/chrX/hs5/' >>merged.chrX.repeats.species.bed.tmp
 cat repeats.chrX.borang.merged.bed | sed -e 's/chrX/hs6/' >>merged.chrX.repeats.species.bed.tmp
 cat repeats.chrX.gibbon.merged.bed | sed -e 's/chrX/hs7/' >>merged.chrX.repeats.species.bed.tmp
-cat merged.chrX.repeats.species.bed.tmp | awk '{print $0 "\tfill_color=purple"}' | sed 's/ /\t/g' | sort -V -k1,1 -k2,2 >merged.chrX.repeats.species.bed
+cat merged.chrX.repeats.species.bed.tmp | awk '{print $0 "\tfill_color=#6a4a1d"}' | sed 's/ /\t/g' | sort -V -k1,1 -k2,2 >merged.chrX.repeats.species.bed
 rm merged.chrX.repeats.species.bed.tmp
 
 
