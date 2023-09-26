@@ -30,8 +30,8 @@ for a in *palindromeSeq.chr*.fa; do echo $a; perl fasta-splitter.pl --part-size 
 
 cd parts
 
-#for species in ${myArray[@]}; do echo ${species}; for i in $(seq 1 2 `ls ${species}.palindromeSeq.chrY*.fa | wc -l`); do echo $i; seq1=${species}.palindromeSeq.chrY.part-${i}.fa; seq2=${species}.palindromeSeq.chrY.part-$((i+1)).fa; echo $seq1; echo $seq2; echo "===="; stretcher -asequence $seq1 -sreverse2 -bsequence $seq2 -outfile ${seq1}.stretcher & done; done; wait;
-#for species in ${myArray[@]}; do echo ${species}; for i in $(seq 1 2 `ls ${species}.palindromeSeq.chrX*.fa | wc -l`); do echo $i; seq1=${species}.palindromeSeq.chrX.part-${i}.fa; seq2=${species}.palindromeSeq.chrX.part-$((i+1)).fa; echo $seq1; echo $seq2; echo "===="; stretcher -asequence $seq1 -sreverse2 -bsequence $seq2 -outfile ${seq1}.stretcher & done; done; wait;
+for species in ${myArray[@]}; do echo ${species}; for i in $(seq 1 2 `ls ${species}.palindromeSeq.chrY*.fa | wc -l`); do echo $i; seq1=${species}.palindromeSeq.chrY.part-${i}.fa; seq2=${species}.palindromeSeq.chrY.part-$((i+1)).fa; echo $seq1; echo $seq2; echo "===="; stretcher -asequence $seq1 -sreverse2 -bsequence $seq2 -outfile ${seq1}.stretcher & done; done; wait;
+for species in ${myArray[@]}; do echo ${species}; for i in $(seq 1 2 `ls ${species}.palindromeSeq.chrX*.fa | wc -l`); do echo $i; seq1=${species}.palindromeSeq.chrX.part-${i}.fa; seq2=${species}.palindromeSeq.chrX.part-$((i+1)).fa; echo $seq1; echo $seq2; echo "===="; stretcher -asequence $seq1 -sreverse2 -bsequence $seq2 -outfile ${seq1}.stretcher & done; done; wait;
 #create key value pairs, in other words remember how the name from palindrover and new numerical name correspond
 for a in *.fa; do echo $a | tr "\n" "\t"; head -n 1 $a | sed s'/>//g'; done >../palindromes.keyvaluepairs.txt
 
