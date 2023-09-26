@@ -1,4 +1,4 @@
-name: /private/home/mcechova/conda/alignment
+name: alignment
 channels:
   - anaconda
   - bioconda
