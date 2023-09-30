@@ -142,6 +142,7 @@ ggplot(combined_data, aes(x = group, y = value/1000, fill = group)) +
   theme(
     plot.background = element_rect(fill = "white")  # Set plot background to white
   )
+  
 @
 
 
@@ -261,7 +262,7 @@ par(bg="white",pty = "s")
 generate_plots <- function(data, chromosome) {
   df<-data
   
-  quarter <- cut(df$spacerlength, breaks = quantile(df$spacerlength, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"))
+  quarter <- cut(df$spacerlength, breaks = quantile(df$spacerlength, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"), include.lowest = TRUE)
   print(table(quarter))
   ggplot(df, aes(x=quarter, y = armlength/1000, fill=quarter)) +
     geom_boxplot() +
@@ -277,7 +278,7 @@ generate_plots <- function(data, chromosome) {
     theme(plot.background = element_rect(fill = "white"),plot.title = element_text(size = 13))
   ggsave(paste0("spacer_length_vs_arm_length.",chromosome,".png"))
   
-  quarter <- cut(df$spacerlength, breaks = quantile(df$spacerlength, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"))
+  quarter <- cut(df$spacerlength, breaks = quantile(df$spacerlength, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"), include.lowest = TRUE)
   ggplot(df, aes(x = quarter, y = gc, fill=quarter)) +
     geom_boxplot() +
     geom_point(position = position_jitter(width = 0.1),bg = "chartreuse", col="red", pch=23) +
@@ -294,7 +295,7 @@ generate_plots <- function(data, chromosome) {
   
   
   
-  quarter <- cut(df$armlength, breaks = quantile(df$armlength, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"))
+  quarter <- cut(df$armlength, breaks = quantile(df$armlength, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"), include.lowest = TRUE)
   ggplot(df, aes(x = quarter, y = gc, fill=quarter)) +
     geom_boxplot() +
     geom_point(position = position_jitter(width = 0.1),bg = "chartreuse", col="red", pch=23) +
@@ -311,7 +312,7 @@ generate_plots <- function(data, chromosome) {
   
   
   
-  quarter <- cut(df$spacergc, breaks = quantile(df$spacergc, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"))
+  quarter <- cut(df$spacergc, breaks = quantile(df$spacergc, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"), include.lowest = TRUE)
   ggplot(df, aes(x = quarter, y = gc, fill=quarter)) +
     geom_boxplot() +
     geom_point(position = position_jitter(width = 0.1),bg = "chartreuse", col="red", pch=23) +
@@ -328,7 +329,7 @@ generate_plots <- function(data, chromosome) {
   
   
   
-  quarter <- cut(df$spacerlength, breaks = quantile(df$spacerlength, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"))
+  quarter <- cut(df$spacerlength, breaks = quantile(df$spacerlength, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"), include.lowest = TRUE)
   ggplot(df, aes(x = quarter, y = identity, fill=quarter)) +
     geom_boxplot() +
     geom_point(position = position_jitter(width = 0.1),bg = "chartreuse", col="red", pch=23) +
@@ -345,7 +346,7 @@ generate_plots <- function(data, chromosome) {
   
   
   
-  quarter <- cut(df$gc, breaks = quantile(df$gc, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"))
+  quarter <- cut(df$gc, breaks = quantile(df$gc, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"), include.lowest = TRUE)
   ggplot(df, aes(x = quarter, y = identity, fill=quarter)) +
     geom_boxplot() +
     geom_point(position = position_jitter(width = 0.1),bg = "chartreuse", col="red", pch=23) +
@@ -363,7 +364,7 @@ generate_plots <- function(data, chromosome) {
   
   
   
-  quarter <- cut(df$spacerlength, breaks = quantile(df$spacerlength, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"))
+  quarter <- cut(df$spacerlength, breaks = quantile(df$spacerlength, probs = c(0, 0.25, 0.5, 0.75, 1)), labels = c("Q1", "Q2", "Q3", "Q4"), include.lowest = TRUE)
   ggplot(df, aes(x = quarter, y = spacergc, fill=quarter)) +
     geom_boxplot() +
     geom_point(position = position_jitter(width = 0.1),bg = "chartreuse", col="red", pch=23) +
@@ -382,5 +383,184 @@ setwd("/Users/mcechova/Desktop/palindrover_tracks.20230615/visualization")
 generate_plots(dfY, "Chromosome Y")
 generate_plots(dfX, "Chromosome X")
 @
+
+
+<<play room>>=
+
+library(dplyr)
+
+generate_plots <- function(data, chromosome) {
+  df<-data
+  stopifnot(any(grepl(chromosome, df$original)))
+  
+  #Spacer Length vs Sequence identity of arms"
+  df <- df %>%
+    group_by(species) %>%
+    mutate(quarter = cut(spacerlength, 
+                         breaks = quantile(spacerlength, probs = c(0, 0.25, 0.5, 0.75, 1)),
+                         labels = c("Q1", "Q2", "Q3", "Q4"),
+                         include.lowest = TRUE))
+  df <- ungroup(df)
+  
+  ggplot(df, aes(x = spacerlength/1000, y = identity)) +
+    geom_point(position = position_jitter(width = 0.1), pch=21, size=2,color="black",fill="gold") +
+    labs(x = "Spacer Length [kb]", y = "Sequence identity of arms", title = paste0(chromosome, " SPACER LENGTH VERSUS SEQUENCE IDENTITY OF PALINDROME ARMS")) +
+    theme_minimal() +
+    theme(
+      axis.title = element_text(size = 14),  # Increase axis title size
+      axis.text = element_text(size = 14),   # Increase axis text size
+      plot.title = element_text(size = 18),   # Increase plot title size
+      legend.text = element_text(size = 14)
+    ) +
+    theme(plot.background = element_rect(fill = "white"),plot.title = element_text(size = 13)) +
+    facet_wrap(~species)
+  ggsave(paste0("by_species.spacer_length_vs_palindrome_arms.",chromosome,".png"))
+  
+  #Arm Length vs GC content of arms
+  df<-data
+  df <- df %>%
+    group_by(species) %>%
+    mutate(quarter = cut(armlength, 
+                         breaks = quantile(armlength, probs = c(0, 0.25, 0.5, 0.75, 1)),
+                         labels = c("Q1", "Q2", "Q3", "Q4"),
+                         include.lowest = TRUE))
+  df <- ungroup(df)
+  
+  ggplot(df, aes(x = armlength/1000, y = gc, fill=quarter)) +
+    geom_point(position = position_jitter(width = 0.1),pch=21, size=2) +
+    labs(x = "Arm Length [kb]", y = "GC content of arms", title = paste0(chromosome, " ARM LENGTH VS GC CONTENT OF ARMS")) +
+    theme_minimal() +
+    theme(
+      axis.title = element_text(size = 14),  # Increase axis title size
+      axis.text = element_text(size = 14),   # Increase axis text size
+      plot.title = element_text(size = 18),   # Increase plot title size
+      legend.text = element_text(size = 14)
+    ) +
+    theme(plot.background = element_rect(fill = "white"),plot.title = element_text(size = 13)) +
+    facet_wrap(~species,scales="free")
+  ggsave(paste0("by_species.arm_length_vs_gc_content_of_arms.",chromosome,".png"))
+  
+  #Spacer Length vs GC content of arms
+  df<-data
+  df <- df %>%
+    group_by(species) %>%
+    mutate(quarter = cut(spacerlength, 
+                         breaks = quantile(spacerlength, probs = c(0, 0.25, 0.5, 0.75, 1)),
+                         labels = c("Q1", "Q2", "Q3", "Q4"),
+                         include.lowest = TRUE))
+  df <- ungroup(df)
+  
+  ggplot(df, aes(x = spacerlength/1000, y = gc, fill=quarter)) +
+    geom_point(position = position_jitter(width = 0.1), pch=21, size=2) +
+    labs(x = "Spacer Length [kb]", y = "GC content of arms", title = paste0(chromosome, " SPACER LENGTH VS GC CONTENT OF ARMS")) +
+    theme_minimal() +
+    theme(
+      axis.title = element_text(size = 14),  # Increase axis title size
+      axis.text = element_text(size = 14),   # Increase axis text size
+      plot.title = element_text(size = 18),   # Increase plot title size
+      legend.text = element_text(size = 14)
+    ) +
+    theme(plot.background = element_rect(fill = "white"),plot.title = element_text(size = 13)) +
+    facet_wrap(~species,scales="free")
+  ggsave(paste0("by_species.spacer_length_vs_gc_content_of_arms.",chromosome,".png"))
+  
+    #Arm Length vs sequence identity
+  df<-data
+  df <- df %>%
+    group_by(species) %>%
+    mutate(quarter = cut(armlength, 
+                         breaks = quantile(armlength, probs = c(0, 0.25, 0.5, 0.75, 1)),
+                         labels = c("Q1", "Q2", "Q3", "Q4"),
+                         include.lowest = TRUE))
+  df <- ungroup(df)
+  
+  ggplot(df, aes(x = armlength/1000, y = identity)) +
+    geom_point(position = position_jitter(width = 0.1),size=2,color="black",fill="gold") +
+    labs(x = "Arm Length [kb]", y = "Sequence identity of arms", title = paste0(chromosome, " ARM LENGTH VS SEQUENCE IDENTITY ARMS")) +
+    theme_minimal() +
+    theme(
+      axis.title = element_text(size = 14),  # Increase axis title size
+      axis.text = element_text(size = 14),   # Increase axis text size
+      plot.title = element_text(size = 18),   # Increase plot title size
+      legend.text = element_text(size = 14)
+    ) +
+    theme(plot.background = element_rect(fill = "white"),plot.title = element_text(size = 13)) +
+    facet_wrap(~species,scales="free")
+  ggsave(paste0("by_species.arm_length_vs_sequence_identity_of_arms.",chromosome,".png"))
+}
+
+setwd("/Users/mcechova/Desktop/palindrover_tracks.20230615/visualization")
+generate_plots(dfY, "chrY")
+generate_plots(dfX, "chrX")
+@
+
+<<>>=
+df<-dfX
+print("Spacer length and sequence identity")
+correlation_results <- df %>%
+  group_by(species) %>%
+  summarize(spearman_corr = cor(spacerlength, identity, method = "spearman"))
+correlation_results <- ungroup(correlation_results)
+print(correlation_results)
+
+print("Arm length and sequence identity")
+correlation_results <- df %>%
+  group_by(species) %>%
+  summarize(spearman_corr = cor(armlength, identity, method = "spearman"))
+correlation_results <- ungroup(correlation_results)
+print(correlation_results)
+
+print("Arm length and GC content of arms")
+correlation_results <- df %>%
+  group_by(species) %>%
+  summarize(spearman_corr = cor(armlength, gc, method = "spearman"))
+correlation_results <- ungroup(correlation_results)
+print(correlation_results)
+
+print("Spacer length and GC content of arms")
+correlation_results <- df %>%
+  group_by(species) %>%
+  summarize(spearman_corr = cor(spacerlength, gc, method = "spearman"))
+correlation_results <- ungroup(correlation_results)
+print(correlation_results)
+
+print("GC content of arms and GC content of spacer")
+correlation_results <- df %>%
+  group_by(species) %>%
+  summarize(spearman_corr = cor(gc, spacergc, method = "spearman"))
+correlation_results <- ungroup(correlation_results)
+print(correlation_results)
+
+@
+
+<<>>=
+# Calculate the Spearman correlation matrix
+df<-dfY
+numeric_cols <- sapply(df, is.numeric)
+df_numeric <- df[, numeric_cols]
+
+# Calculate the Spearman correlation matrix
+cor_matrix <- cor(df_numeric, method = "spearman")
+
+# Calculate p-values for each correlation
+p_values <- cor.test(df_numeric, method = "spearman")$p.value
+
+# Create a table of correlations with p-values
+cor_table <- data.frame(
+  Variable1 = rep(colnames(df_numeric), each = ncol(df_numeric)),
+  Variable2 = rep(colnames(df_numeric), ncol(df_numeric)),
+  Spearman_Correlation = as.vector(cor_matrix),
+  p_value = as.vector(p_values)
+)
+
+# Exclude the diagonal (correlation of a variable with itself)
+cor_table <- cor_table[cor_table$Variable1 != cor_table$Variable2, ]
+
+# Print the correlation table
+print(cor_table)
+
+
+@
+
 
 \end{document}
