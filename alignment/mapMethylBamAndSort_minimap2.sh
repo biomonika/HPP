@@ -1,12 +1,21 @@
 #!/bin/bash
+#SBATCH --job-name=mapMethylBamAndSort_minimap2.20231017
+#SBATCH --partition=main
+#SBATCH --mail-user=mcechova@ucsc.edu
+#SBATCH --nodes=1
+#SBATCH --mem=200gb
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=64
+#SBATCH --output=mapMethylBamAndSort_minimap2.20231017.%j.log
+#SBATCH --time=18:00:00
 
 set -x 
 set -e
 
 source /opt/miniconda/etc/profile.d/conda.sh; 
-conda activate /public/home/mcechova/conda/methylation/
+conda activate /private/home/mcechova/conda/alignment
 
-in_cores=180 #number of processors to be used
+in_cores=64 #number of processors to be used
 
 unaligned_methyl_bam=$1
 DIR="$(dirname "${unaligned_methyl_bam}")" #output in the same directory where the input file is
@@ -16,7 +25,7 @@ ref_file=$2 #"/public/groups/migalab/mcechova/chm13v2.0.fa" #"GCA_000001405.15_G
 ref_name="$(basename -- $ref_file)"
 ref_name="${ref_name%.*}"
 
-in_args="-y -x map-ont --MD --eqx --cs -Y -L -p0.1 -a -k 17 -K 10g" #minimap parameters appropriate for nanopore reads and secphase
+in_args="-y -x map-ont --MD --eqx --cs -Y -L -a -k 17 -K 10g" #minimap parameters appropriate for nanopore reads
 
 method="minimap2"
 
@@ -33,7 +42,7 @@ else
 fi
 
 #do the mapping with methylation tags
-samtools fastq -T MM,ML ${unaligned_methyl_bam} | minimap2 -t ${in_cores} ${in_args} ${index_file} - | samtools view -@ ${in_cores} -bh - | samtools sort -@ ${in_cores} - > ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
+samtools fastq -T Mm,Ml ${unaligned_methyl_bam} | minimap2 -t ${in_cores} ${in_args} ${index_file} - | samtools view -@ ${in_cores} -bh - | samtools sort -@ ${in_cores} - > ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
 samtools index ${DIR}/${sample}.fastq.cpg.${method}.${ref_name}.bam
 
 echo "Done."
