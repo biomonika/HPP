@@ -16,16 +16,13 @@ pwd; hostname; date
 source /opt/miniconda/etc/profile.d/conda.sh
 conda activate /private/home/mcechova/conda/alignment
 
-individual=$1
-echo ${individual}
+reference=$1 #${individual}.diploid.complete.fa
+porec_file=$2 #${individual}.poreC.fastq.gz
+filename=$(basename "$reference" .fa)."poreC"
 
 threadCount=32
 minimap2_args="-a -x map-ont -k 17 -K 10g -I 8g"
 min_mapq=10
-
-reference=${individual}.diploid.complete.fa
-filename=$(basename "$reference" .fa)."poreC"
-porec_file=${individual}.poreC.fastq.gz
 
 #parameters from https://github.com/meredith705/gfase_wdl/blob/main/tasks/proximityAlign.wdl
 
@@ -33,9 +30,9 @@ porec_file=${individual}.poreC.fastq.gz
 minimap2 ${minimap2_args} \
          -t ${threadCount} \
          ${reference} \
-         ${porec_file} | samtools view -bh -@ ${threadCount} -q ${min_mapq} -o ${reference}.poreC.bam -O BAM -
+         ${porec_file} | samtools view -bh -@ ${threadCount} -q ${min_mapq} -o ${filename}.bam -O BAM -
 
-samtools view ${reference}.poreC.bam | cut -f1,3,4 | sort -k1,1 -k3,3n >${filename}.txt
+samtools view ${filename}.bam | cut -f1,3,4 | sort -k1,1 -k3,3n >${filename}.txt
 input_minimap2=${filename}.txt 
 
 #create all pairwise combination for poreC reads
