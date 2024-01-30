@@ -25,20 +25,19 @@ In this step, we are mapping poreC reads using minimap2 and filtering for the ma
 
 To get the information about these interactions, run the following:
 ```
-function test() {
-  console.log("notice the blank line before this function?");
-}
+./run_poreC_minimap2.sh reference porec_file
+
+for example:
+sbatch run_poreC_minimap2.sh PAN027.diploid.complete.fa PAN027.poreC.fastq.gz
 ```
 
 ### Visualizing poreC interactions
 This script will require the table of interactions from the previous step, as well as identified rDNA-distal (containing p-arms) and rDNA-proximal (containing q-arms) sequences
 
-Please manually modify the contig names in the script and the run the following:
+Please manually modify the contig names in the script, as well as the input file, and then run the following:
 
 ```
-function test() {
-  console.log("notice the blank line before this function?");
-}
+Rscript plot_poreC_interactions.R
 ```
 
 The resulting heatmap should provide an information needed for the scaffolding of acrocentric chromosomes. 
