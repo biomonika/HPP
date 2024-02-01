@@ -13,7 +13,7 @@ set -x
 set -e
 
 source /opt/miniconda/etc/profile.d/conda.sh; 
-conda activate /private/home/mcechova/conda/alignment
+conda activate /private/home/mcechova/.conda/envs/methylation
 
 in_cores=64 #number of processors to be used
 
