@@ -3,10 +3,13 @@
 \begin{document}
 \SweaveOpts{concordance=TRUE}
 
-<<load palindrome data and create table with all the information for chromosomes X and Y>>=
-library(gtools)
-library(stringr)
-library(ggplot2)
+<<load palindrome data and create table with all the information for chromosomes X and Y, eval=FALSE>>=
+
+#skip this chunk if files palindrome_metrics.chrX.tsv and palindrome_metrics.chrY.tsv are available
+
+require(gtools)
+require(stringr)
+require(ggplot2)
 
 #color scheme
 color_Borang<-rgb(249,207,68, maxColorValue = 255)
@@ -187,6 +190,16 @@ dfX <- na.omit(dfX)
 print(dim(dfY))
 print(dim(dfX))
 
+#write dataframes with palindrome information into a tab-delimited file
+write.table(dfY, file = "palindrome_metrics.chrY.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(dfX, file = "palindrome_metrics.chrX.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+@
+
+<<load data into dataframe>>=
+
+#load file with metrics if available, otherwise run the previous chunk
+dfY<-as.data.frame(read.table("palindrome_metrics.chrY.tsv",header=TRUE))
+dfX<-as.data.frame(read.table("palindrome_metrics.chrX.tsv",header=TRUE))
 @
 
 <<calculate ratios of lengths between X and Y>>=
@@ -309,7 +322,7 @@ q2<-ggplot(arms_df, aes(x = arms_groups, y = GC, fill=arms_groups)) +
 
 
 <<scatterplots per species>>=
-library(scales)
+require(scales)
 
 generate_scatterplots_per_species <- function(data, chromosome) {
   df <- data
@@ -459,7 +472,7 @@ generate_scatterplots_per_species(dfX, "chrX")
 
 
 <<plot palindrome arm lengths, and the results of GC content analysis in a single plot>>=
-library(gridExtra)
+require(gridExtra)
 composite_plot1 <- grid.arrange(p1,p2,q1,q2, ncol = 2)
 ggsave("composite_plot1.png", composite_plot1)
 @
