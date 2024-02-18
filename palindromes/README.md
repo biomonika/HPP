@@ -1,6 +1,5 @@
----
-title: "The analysis of metrics of palindromes accompanying the paper The Complete Sequence and Comparative Analysis of Ape Sex Chromosomes"
----
+# The analysis of metrics of palindromes accompanying the paper The Complete Sequence and Comparative Analysis of Ape Sex Chromosomes
+
 
 We analyzed GC content of palindrome arms and a spacer, their respective lengths, and the identity of corresponding arms in each palindrome. 
 
@@ -23,7 +22,7 @@ spacers.geecee.txt
 palindromes.keyvaluepairs.txt 
 spacers.keyvaluepairs.txt
 ```
-and should be available in two folder, one for each chromosome. If you are interested in how these files are generated, please continue reading below.
+These files should be available in two folders, one for each chromosome. If you are interested in how these files are generated, please continue reading below.
 
 ---
 
