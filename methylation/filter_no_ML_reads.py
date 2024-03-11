@@ -6,7 +6,7 @@ import pysam
 
 filename = sys.argv[1]
 samfile = pysam.AlignmentFile(filename, "rb")
-output_filtered = pysam.AlignmentFile(filename+".onlyMLTags.bam", "wb", template=samfile)
+output_filtered = pysam.AlignmentFile(filename+".onlyMlTags.bam", "wb", template=samfile)
 output_missing = pysam.AlignmentFile(filename+".missingTags.bam", "wb", template=samfile)
 
 counter=0
