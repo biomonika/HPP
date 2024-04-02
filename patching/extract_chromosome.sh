@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=extract_chromosome.20231129
+#SBATCH --job-name=extract_chromosome.20240329
 #SBATCH --partition=medium
 #SBATCH --mail-user=mcechova@ucsc.edu
 #SBATCH --nodes=1
 #SBATCH --mem=32gb
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
-#SBATCH --output=extract_chromosome.20231129.%j.log
+#SBATCH --output=extract_chromosome.20240329.%j.log
 
 set -e
 #set -x
@@ -72,6 +72,12 @@ for chrom in "${chromosomes[@]}"; do
             echo ${chromosome} >output.${assembly_name}/${chromosome}.truncated.fa
         fi
     fi
+done
+
+#sequences defined in bed files should also be writen to fasta files
+for bed in chr*.${assembly_name}.mashmap.txt*bed; do 
+    echo $bed
+    bedtools getfasta -fi ${assembly} -bed ${bed} -name >flanks.${bed}.fa
 done
 
 echo "Done."
