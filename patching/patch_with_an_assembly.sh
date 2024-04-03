@@ -17,7 +17,7 @@ source /opt/miniconda/etc/profile.d/conda.sh
 conda activate /private/home/mcechova/conda/alignment
 
 threadCount=24
-minIdentity=90
+minIdentity=95
 bed_file=$1
 assembly=$2
 assembly_name=$(basename -- "$assembly")
@@ -25,6 +25,7 @@ assembly_name="${assembly_name%.*}"
 patch_reference=$3
 patch_reference_name=$(basename -- "$patch_reference")
 patch_reference_name="${patch_reference_name%.*}"
+adjustment_for_inner_cut=$4 #if not patching at the ends, but cutting the edges of the broken contigs (zooming out approach)
 
 echo ${bed_file} ${patch_reference} ${haplotype}
 
@@ -48,7 +49,7 @@ else
     fi
     cat tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 | sort -k1,1n >${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
     #remove temporary wfmash file
-    rm -f tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
+    rm -f tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
 fi
 
 wait
@@ -154,13 +155,24 @@ sequence_names=$(awk '{print $1}' ${chr_mashmap})
 
 first_contig=$(awk 'NR==1 {print $1}' "${chr_mashmap}")
 second_contig=$(awk 'NR==2 {print $1}' "${chr_mashmap}")
+first_contig_length=$(awk 'NR==1 {print $2}' "${chr_mashmap}")
+second_contig_length=$(awk 'NR==2 {print $2}' "${chr_mashmap}")
 
-while IFS= read -r sequence_name; do
-    # Use samtools faidx to extract the sequence
-    # We are extracting the original sequences from the assembly
-    echo $sequence_name
-    samtools faidx ${assembly} ${sequence_name} > ${sequence_name}.fasta
-done <<< "$sequence_names"
+if [ -z "$adjustment_for_inner_cut" ]; then
+    echo "The two contigs used for patching will be used in full."
+    
+    samtools faidx ${assembly} ${first_contig} > ${first_contig}.fasta
+    samtools faidx ${assembly} ${second_contig} > ${second_contig}.fasta
+else
+    echo "The two contigs used for patching will _not_ be used in full."
+    echo "We will cut out $adjustment_for_inner_cut from the edges."
+    
+    end_coordinate=$((first_contig_length - adjustment_for_inner_cut))
+    samtools faidx ${assembly} "${first_contig}:0-${end_coordinate}" > ${first_contig}.fasta
+    
+    start_coordinate=$((second_contig_length - adjustment_for_inner_cut))
+    samtools faidx ${assembly} "${second_contig}:${start_coordinate}-${second_contig_length}" > ${second_contig}.fasta
+fi
 
 # Use head to extract the first line of each file
 header1=$(head -n 1 "${first_contig}.fasta")
