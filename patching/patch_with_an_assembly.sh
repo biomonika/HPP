@@ -3,7 +3,7 @@
 #SBATCH --partition=medium
 #SBATCH --mail-user=mcechova@ucsc.edu
 #SBATCH --nodes=1
-#SBATCH --mem=32gb
+#SBATCH --mem=64gb
 #SBATCH --ntasks=24
 #SBATCH --cpus-per-task=1
 #SBATCH --output=patch_with_an_assembly.20240325.%j.log
@@ -17,8 +17,7 @@ source /opt/miniconda/etc/profile.d/conda.sh
 conda activate /private/home/mcechova/conda/alignment
 
 threadCount=24
-minIdentity=95
-reference="chm13v2.0.fa.gz"
+minIdentity=90
 bed_file=$1
 assembly=$2
 assembly_name=$(basename -- "$assembly")
@@ -34,6 +33,7 @@ order=$(echo "$bed_file" | cut -d'.' -f8)
 
 #extract flanks and find out where they belong
 bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >flanks.${bed_file}.${patch_reference_name}
+flank_file=flanks.${bed_file}.${patch_reference_name}
 
 #BREAKPOINTS TO AN ASSEMBLY AVAILABLE FOR PATCHING
 
@@ -42,9 +42,13 @@ if [ -e "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
 else
     echo "Wfmash does not exist. Creating now."
     wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    if [ ! -s "tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
+        echo "Wfmash file is empty. Flanks were not mapped. Exiting script."
+        exit 1
+    fi
     cat tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 | sort -k1,1n >${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
     #remove temporary wfmash file
-    rm tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
+    rm -f tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
 fi
 
 wait
