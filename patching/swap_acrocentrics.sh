@@ -67,16 +67,20 @@ swap_chromosome() {
 
 	#COMBINE BOTH ASSEMBLIES
 	#add header
-	echo ">${chromosome}.${assembly_to_be_patched_name}.acroswap" >PATCHED.${chromosome}.${assembly_to_be_patched_name}.acroswap.fa
+	echo ">${chromosome}.${assembly_to_be_patched_name}.acroswap" >tmp.${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa
 	#add sequence
-	cat ${assembly_reference_name}.toKeep.fa ${assembly_to_be_patched_name}.toKeep.fa | seqtk seq | egrep -v "^>" | tr -d '\n' >>PATCHED.${chromosome}.${assembly_to_be_patched_name}.acroswap.fa
+	cat ${assembly_reference_name}.toKeep.fa ${assembly_to_be_patched_name}.toKeep.fa | seqtk seq | egrep -v "^>" | tr -d '\n' >>tmp.${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa
+
+	#reformat to 60 characters per line in fasta file
+	seqtk seq -l 60 tmp.${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa >${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa
+	rm tmp.${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa
 
 	#remove unnecessary files
 	ls ${assembly_to_be_patched_name}.toKeep.fa
 	ls ${assembly_reference_name}.toKeep.fa
 	rm ${assembly_to_be_patched_name}.toKeep.fa ${assembly_reference_name}.toKeep.fa
 
-	echo "After acroswap, the resulting patched file is: " PATCHED.${chromosome}.${assembly_to_be_patched_name}.acroswap.fa.acroswap.fa
+	echo "After acroswap, the resulting patched file is: " ${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa.acroswap.fa
 }
 
 for chromosome in "${acrocentric_chromosome[@]}"; do
