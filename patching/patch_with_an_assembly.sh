@@ -36,7 +36,16 @@ order=$(echo "$bed_file" | cut -d'.' -f8)
 bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >flanks.${bed_file}.${patch_reference_name}
 
 #BREAKPOINTS TO AN ASSEMBLY AVAILABLE FOR PATCHING
-mashmap --filter_mode one-to-one --threads ${threadCount} --perc_identity ${minIdentity} --noSplit --segLength 1000 -r ${patch_reference} -q flanks.${bed_file}.${patch_reference_name} -o ${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt > /dev/null 2>&1
+
+if [ -e "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
+    echo "Wfmash file exists and won't be re-written."
+else
+    echo "Wfmash does not exist. Creating now."
+    wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    cat tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 | sort -k1,1n >${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    #remove temporary wfmash file
+    rm tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
+fi
 
 wait
 
@@ -155,20 +164,20 @@ header2=$(head -n 1 "${chromosome}.${order}.patch.${patch_reference_name}.${regi
 header3=$(head -n 1 "${second_contig}.fasta")
 
 #MERGE SEPARATELY HEADER AND THE BODY/SEQUENCE
-echo ">"${chromosome}.$(echo "original_$header1" | tr -d '>')"+"$(echo "${patch_reference_name}.${gap_size}.${header2}" | tr -d '>')"+"$(echo "original_$header3" | tr -d '>') >${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
-cat "${first_contig}.fasta" | grep -v ">" >>${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
-cat "${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa" | grep -v ">" >>${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
-cat "${second_contig}.fasta" | grep -v ">" >>${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
+echo ">"${chromosome}.$(echo "original_$header1" | tr -d '>')"+"$(echo "${patch_reference_name}.${gap_size}.${header2}" | tr -d '>')"+"$(echo "original_$header3" | tr -d '>') >${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
+cat "${first_contig}.fasta" | grep -v ">" >>${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
+cat "${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa" | grep -v ">" >>${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
+cat "${second_contig}.fasta" | grep -v ">" >>${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
 
 #reformat the final patched fasta chromosome
-seqtk seq -L 0 ${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp >${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta
-rm ${chromosome}.${order}.patched.${assembly_name}.fasta.tmp
-echo "Merged concatenated fasta for ${chromosome} saved to" ${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta
+seqtk seq -L 0 ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp >${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta
+rm -f ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
+echo "Merged concatenated fasta for ${chromosome} saved to" ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta
 
 
 #remove files that are not needed
 rm -f flanks.${bed_file}.${patch_reference_name}
-rm -f "${first_contig}.fasta" "${second_contig}.fasta"
+rm -f "${first_contig}.fasta" "${second_contig}.fasta" "${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa"
 
 echo "Done."
 echo "==========================="
