@@ -43,13 +43,14 @@ if [ -e "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
 else
     echo "Wfmash does not exist. Creating now."
     wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
-    if [ ! -s "tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
-        echo "Wfmash file is empty. Flanks were not mapped. Exiting script."
-        exit 1
-    fi
     cat tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 | sort -k1,1n >${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
     #remove temporary wfmash file
     rm -f tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+fi
+
+if [ ! -s "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
+    echo "Wfmash file is empty. Flanks were not mapped. Exiting script."
+    exit 1
 fi
 
 wait
@@ -166,11 +167,13 @@ if [ -z "$adjustment_for_inner_cut" ]; then
 else
     echo "The two contigs used for patching will _not_ be used in full."
     echo "We will cut out $adjustment_for_inner_cut from the edges."
+    echo "Will use: ${first_contig}:0-${end_coordinate}"
+    echo "Will use: ${second_contig}:${start_coordinate}-${second_contig_length}"
     
     end_coordinate=$((first_contig_length - adjustment_for_inner_cut))
     samtools faidx ${assembly} "${first_contig}:0-${end_coordinate}" > ${first_contig}.fasta
     
-    start_coordinate=$((second_contig_length - adjustment_for_inner_cut))
+    start_coordinate=$((0 + adjustment_for_inner_cut))
     samtools faidx ${assembly} "${second_contig}:${start_coordinate}-${second_contig_length}" > ${second_contig}.fasta
 fi
 
