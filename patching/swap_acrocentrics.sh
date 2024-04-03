@@ -73,14 +73,18 @@ swap_chromosome() {
 	echo ${region}
 	samtools faidx ${assembly_reference} ${region} >${assembly_reference_name}.toKeep.fa
 
-	#combine both assemblies
-	cat ${assembly_reference_name}.toKeep.fa ${assembly_to_be_patched_name}.toKeep.fa >${chromosome}.${assembly_to_be_patched_name}.acroswap.fa
+	#COMBINE BOTH ASSEMBLIES
+	#add header
+	echo ">${chromosome}.${assembly_to_be_patched_name}.acroswap" >PATCHED.${chromosome}.${assembly_to_be_patched_name}.acroswap.fa
+	#add sequence
+	cat ${assembly_reference_name}.toKeep.fa ${assembly_to_be_patched_name}.toKeep.fa | seqtk seq | egrep -v "^>" | tr -d '\n' >>PATCHED.${chromosome}.${assembly_to_be_patched_name}.acroswap.fa
+
 	#remove unnecessary files
 	ls ${assembly_to_be_patched_name}.toKeep.fa
 	ls ${assembly_reference_name}.toKeep.fa
 	rm ${assembly_to_be_patched_name}.toKeep.fa ${assembly_reference_name}.toKeep.fa
 
-	echo "After acroswap, the resulting patched file is: " ${chromosome}.${assembly_to_be_patched_name}.acroswap.fa
+	echo "After acroswap, the resulting patched file is: " PATCHED.${chromosome}.${assembly_to_be_patched_name}.acroswap.fa.acroswap.fa
 }
 
 for chromosome in "${acrocentric_chromosome[@]}"; do
