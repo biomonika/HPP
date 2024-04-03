@@ -25,14 +25,6 @@ conda activate /private/home/mcechova/conda/alignment
 #6. associated censat track of the assembly that will be used for patching
 #7. the name of the chromosome that we want to patch
 
-assembly_to_be_patched=$1
-assembly_to_be_patched_mashmap=$2
-assembly_to_be_patched_censat_track=$3
-assembly_reference=$4
-assembly_reference_mashmap=$5
-assembly_reference_censat_track=$6
-chromosome=$7 #which chromosome are we trying to patch
-
 assembly_to_be_patched="full.maternal.contigs.fa"
 assembly_to_be_patched_mashmap="mashmap/full.maternal.contigs.mashmap.txt"
 assembly_to_be_patched_censat_track="full.maternal.contigs.cenSat.bed"
