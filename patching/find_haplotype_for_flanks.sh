@@ -9,7 +9,7 @@
 #SBATCH --output=find_haplotype_for_flanks.sh.20240402.%j.log
 
 set -e
-#set -x
+set -x
 
 pwd; hostname; date
 
@@ -33,6 +33,20 @@ haplotype2_name="${haplotype2_name%.*}"
 
 echo ${flanks_name} ${haplotype1_name} ${haplotype2_name}
 
+#check if the input exist
+if [ ! -e "${flanks}" ]; then
+    echo "File with the flanks does not exist. Quitting the script."
+    exit 1
+fi
+if [ ! -e "${haplotype1}" ]; then
+    echo "File with the haplotype1 does not exist. Quitting the script."
+    exit 1
+fi
+if [ ! -e "${haplotype2}" ]; then
+    echo "File with the haplotype2 does not exist. Quitting the script."
+    exit 1
+fi
+
 chromosome=$(echo "$flanks" | cut -d'.' -f1)
 order=$(echo "$flanks" | cut -d'.' -f8)
 
@@ -51,8 +65,18 @@ else
 fi
 
 wait
-# at this point, we mapped flanks to two haplotypes, and need to decide which one is a better match
 
+#check if flanks were successfully mapped
+if [ ! -s "${flanks_name}.${haplotype1_name}" ]; then
+    echo "Mashmap file is empty for haplotype1. Exiting script."
+    exit 1
+fi
+if [ ! -s "${flanks_name}.${haplotype2_name}" ]; then
+    echo "Mashmap file is empty for haplotype1. Exiting script."
+    exit 1
+fi
+
+# at this point, we mapped flanks to two haplotypes, and need to decide which one is a better match
 identity_of_haplotype1_flank1=$(awk 'NR==1 {print $10}' "${flanks_name}.${haplotype1_name}")
 identity_of_haplotype2_flank1=$(awk 'NR==1 {print $10}' "${flanks_name}.${haplotype2_name}")
 identity_of_haplotype1_flank2=$(awk 'NR==2 {print $10}' "${flanks_name}.${haplotype1_name}")
@@ -74,6 +98,8 @@ else
     echo "It is not possible to decide which haplotype is a better match."
 fi
 
+#Remove unnecessary files
+#rm ${flanks_name}.${haplotype1_name} ${flanks_name}.${haplotype2_name}
 echo "Done."
 echo "==========================="
 date
