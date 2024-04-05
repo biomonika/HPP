@@ -9,16 +9,14 @@
 #SBATCH --output=create_gapped_breakpoints.20240327.%j.log
 
 set -e
-#set -x
+set -x
 
 pwd; hostname; date
 
 source /opt/miniconda/etc/profile.d/conda.sh
 conda activate /private/home/mcechova/conda/ONT
 
-T2T_file=$1
-#T2T_file="T2T/full.maternal.contigs.T2T.scaffolds.txt"
-assembly=$2
+assembly=$1
 assembly_name=$(basename -- "$assembly")
 assembly_name="${assembly_name%.*}"
 #assembly="full.maternal.contigs.fa"
@@ -29,7 +27,7 @@ extract_flanks() {
     local coordinates="$1"
     local flank_size="$2"
     local chromosome="$3"
-    local chromosome_length="$4"
+    local contig_length="$4"
 
     local contig
     local flank_start
@@ -53,10 +51,10 @@ extract_flanks() {
         print flank_start;
     }' <<< "$coordinates")
 
-    flank_end=$(awk -v flank_size="$flank_size" -v chromosome_length="$chromosome_length" '{
+    flank_end=$(awk -v flank_size="$flank_size" -v contig_length="$contig_length" '{
         flank_end = $3 + flank_size;
-        if (flank_end > chromosome_length) {
-            flank_end = chromosome_length;
+        if (flank_end > contig_length) {
+            flank_end = contig_length;
         }
         print flank_end;
     }' <<< "$coordinates")
@@ -65,29 +63,32 @@ extract_flanks() {
     echo -e "$contig\t$N_end\t$flank_end\t$chromosome"
 }
 
-#loop through all non-acrocentric contigs that contain gaps
-for contig in `cat T2T/full.maternal.contigs.T2T.scaffolds.txt | tail -n +2 | egrep -v "chr13|chr14|chr15|chr21|chr22" | awk '{if ($3>0) print;}' | cut -f1`; do
-    #echo $contig; #this contig contains gaps
-    chromosome=`egrep $contig $T2T_file | cut -f4`
-    echo $chromosome
-    chromosome_length=`egrep $contig $T2T_file | cut -f2`
-    
-    #identify stretches of Ns
-    #this is followed by merging the stretches of Ns, up to the distance of the flank (so that the flanks are always non-overlapping)
-    seqtk cutN -g -n ${min_gap_size} ${assembly} | egrep ${contig} | bedtools merge -d ${flank_size} >gaps.${chromosome}.${contig}.bed
+#identify stretches of Ns
+#this is followed by merging the stretches of Ns, up to the distance of the flank (so that the flanks are always non-overlapping)
+seqtk cutN -g -n ${min_gap_size} ${assembly} | bedtools merge -d ${flank_size} >gaps.all.${assembly_name}.bed
+
+conda activate /private/home/mcechova/conda/QC
+
+for contig in `cat gaps.all.${assembly_name}.bed | cut -f1 | sort | uniq`; do
+    echo $contig; #this contig contains gaps
+    contig_length=`bioawk -c fastx '{if ($name == "'"$contig"'") print length($seq)}' ${assembly}`
+    echo $contig_length
+
+    #identify stretches of Ns for specific contig
+    grep ${contig} gaps.all.${assembly_name}.bed >gaps.${contig}.bed
 
     order=1
     #for each gap, extract flanks and their coordinates
     while IFS= read -r gap || [ -n "$gap" ]; do
         if [[ -n $gap ]]; then  # Check if the line is non-empty
-            bed_file="${chromosome}.gaps.${assembly_name}.${contig}.order${order}.bed"
-            extract_flanks "$gap" "$flank_size" "$chromosome" "$chromosome_length" >${bed_file}
+            bed_file="${contig}.gaps.${assembly_name}.order${order}.bed"
+            extract_flanks "$gap" "$flank_size" "$contig" "$contig_length" >${bed_file}
             #extract sequence as well
             bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >flanks.${bed_file}.fa
             ((order++)) #increment the order if multiple gaps per chromosome
         fi
-    done < gaps."$chromosome"."$contig".bed
-    rm gaps.${chromosome}.${contig}.bed
+    done < gaps."$contig".bed
+    rm gaps.${contig}.bed
 done;
 
 echo "Done."
