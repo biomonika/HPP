@@ -28,13 +28,13 @@ assembly_name="${assembly_name%.*}"
 patch_reference=$3
 patch_reference_name=$(basename -- "$patch_reference")
 patch_reference_name="${patch_reference_name%.*}"
-bed_file=$4
+bed_file="${flank_file%.fa}" #the original bed file can be derived from flank file name
 flank_size=1000000
 
 echo ${flank_name} ${patch_reference} ${haplotype}
 
-chromosome=$(echo "$flank_file" | cut -d'.' -f1)
-order=$(echo "$flank_file" | cut -d'.' -f8)
+chromosome=$(echo "$bed_file" | cut -d'.' -f1)
+order=$(echo "$bed_file" | cut -d'.' -f7)
 
 #find out where flanks belong
 
@@ -48,7 +48,7 @@ else
     wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
     cat tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 | sort -k1,1n >${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
     #remove temporary wfmash file
-    rm #tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
+    #rm tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
 
     #wfmash is replacing previous version with approximate mapping and mashmap
     #mashmap --filter_mode one-to-one --threads ${threadCount} --perc_identity ${minIdentity} --noSplit --segLength 1000 -r ${patch_reference} -q flanks.${flank_name}.${assembly_name} -o ${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt > /dev/null 2>&1
@@ -181,6 +181,15 @@ else
     echo "The gap_size is positive."
     region=${contig_name}:${gap_start}-${gap_end}
     samtools faidx ${patch_reference} ${region} >${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
+    #check to make sure the patch doesn't contain Ns
+    gaps_in_patch=$(seqtk cutN -g -n 10 ${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa)
+    num_gaps_in_patch=$(echo "$gaps_in_patch" | wc -l)
+
+    # Check if the output is not empty
+    if [ "$num_gaps_in_patch" -gt 0 ]; then
+        echo "The number of gaps inside the patch is not empty. Exiting..."
+        exit 1
+    fi
 fi
 
 # Extract sequence names of the contigs we will be merging
@@ -199,14 +208,14 @@ header3=${original_contig}:${gap_end}-
 
 #MERGE SEPARATELY HEADER AND THE BODY/SEQUENCE
 echo ">"${chromosome}.$(echo "original_$header1" | tr -d '>')"+"$(echo "${patch_reference_name}.${gap_size}.${header2}" | tr -d '>')"+"$(echo "original_$header3" | tr -d '>') >${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
-cat "first_part.${original_contig}.fasta" | grep -v ">" >>${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
+cat "first_part.${original_contig}.fasta" | grep -v ">" | tr -d '\n' >>${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
 cat "${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa" | grep -v ">" >>${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
-cat "second_part.${original_contig}.fasta" | grep -v ">" >>${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
+cat "second_part.${original_contig}.fasta" | grep -v ">" | tr -d '\n' >>${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
 
 #reformat the final patched fasta chromosome
-seqtk seq -L 0 ${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp >PATCHED.${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta
+cat ${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp | seqtk seq -l 60 >${chromosome}.PATCHED.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta
 rm -f ${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
-echo "Merged concatenated fasta for ${chromosome} saved to" PATCHED.${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta
+echo "Merged concatenated fasta for ${chromosome} saved to" ${chromosome}.PATCHED.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta
 
 
 #remove files that are not needed
