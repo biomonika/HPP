@@ -85,6 +85,11 @@ adjust_coordinates_and_try_again () {
         
         if [ $average_length_of_flank -eq $flank_size ]; then
             echo "sbatch fill_gaps_with_an_assembly.sh ${new_bed_file_name}.fa ${assembly} ${patch_reference}"
+            
+            #remove wfmash file as it won't be needed, as it doesn't work for the match
+            rm -f ${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
+
+            #let's re-run the script with new parameters and try again
             sbatch fill_gaps_with_an_assembly.sh ${new_bed_file_name}.fa ${assembly} ${patch_reference}
             exit 1
         else
@@ -251,6 +256,7 @@ else
         rm -f ${gap_file}
     else
         echo "The number of gaps inside the patch is not empty. Exiting..."
+        rm -f ${gap_file}
         exit 1
     fi
 fi
