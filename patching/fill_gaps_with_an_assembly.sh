@@ -34,10 +34,70 @@ flank_size=1000000
 echo ${flank_name} ${patch_reference} ${haplotype}
 
 chromosome=$(echo "$bed_file" | cut -d'.' -f1)
-order=$(echo "$bed_file" | cut -d'.' -f7)
+order=$(echo "$bed_file" | grep -o 'order[0-9]\+' | sed 's/order//')
+echo "chromosome: $chromosome"
+echo "order: $order"
+
+adjust_coordinates_and_try_again () {
+    #if gap filling with current coordinates is not successfull, this function should be called
+    #read information about the first flank
+    chromosome_of_first_flank=$(awk 'NR==1 {print $1}' "${bed_file}")
+    first_coordinate_of_first_flank=$(awk 'NR==1 {print $2}' "${bed_file}")
+    second_coordinate_of_first_flank=$(awk 'NR==1 {print $3}' "${bed_file}")
+    name_of_first_flank=$(awk 'NR==1 {print $4}' "${bed_file}")
+
+    #read information about the second flank
+    chromosome_of_second_flank=$(awk 'NR==2 {print $1}' "${bed_file}")
+    first_coordinate_of_second_flank=$(awk 'NR==2 {print $2}' "${bed_file}")
+    second_coordinate_of_second_flank=$(awk 'NR==2 {print $3}' "${bed_file}")
+    name_of_second_flank=$(awk 'NR==2 {print $4}' "${bed_file}")
+
+    #adjust the coordinates, subtract for the first flank
+    first_coordinate_of_first_flank=$(($first_coordinate_of_first_flank - flank_size))
+    second_coordinate_of_first_flank=$(($second_coordinate_of_first_flank - flank_size))
+
+    #adjust the coordinates, add to the seconf flank
+    first_coordinate_of_second_flank=$(($first_coordinate_of_second_flank + flank_size))
+    second_coordinate_of_second_flank=$(($second_coordinate_of_second_flank + flank_size))
+
+    first_row_of_bed_file="${chromosome_of_first_flank}\t${first_coordinate_of_first_flank}\t${second_coordinate_of_first_flank}\t${name_of_first_flank}"
+    second_row_of_bed_file="${chromosome_of_second_flank}\t${first_coordinate_of_second_flank}\t${second_coordinate_of_second_flank}\t${name_of_second_flank}"
+
+    new_order=$((order+1000))
+    new_bed_file_name=`echo $bed_file | sed "s/order${order}/order${new_order}/"`
+    echo "new_bed_file_name: ${new_bed_file_name}"
+
+    if [[ ${new_order} -gt 5000 ]] ; then
+        echo "Giving up on gap filling. Tried too many times: ${new_order}"
+        exit 1
+    else
+        echo "Let's try gap filling again with the new adjusted coordinates."
+
+        echo -e ${first_row_of_bed_file} >${new_bed_file_name}
+        echo -e ${second_row_of_bed_file} >>${new_bed_file_name}
+
+        #get new flanks based on these new coordinates
+        bedtools getfasta -fi ${assembly} -bed ${new_bed_file_name} >${new_bed_file_name}.fa
+        sleep 5
+
+        #calculate the average length of the extracted flank
+        average_length_of_flank=`bioawk -c fastx '{ print $name, length($seq) }' ${new_bed_file_name}.fa | awk '{ total += $2 } END { print total/NR }'`
+        
+        if [ $average_length_of_flank -eq $flank_size ]; then
+            echo "sbatch fill_gaps_with_an_assembly.sh ${new_bed_file_name}.fa ${assembly} ${patch_reference}"
+            sbatch fill_gaps_with_an_assembly.sh ${new_bed_file_name}.fa ${assembly} ${patch_reference}
+            exit 1
+        else
+            echo "The extracted flanks have unexpected lengths. Giving up on gap filling."
+            echo "flank_size: $flank_size"
+            echo "average_length_of_flank: $average_length_of_flank"
+            exit 1
+        fi
+fi
+}
+
 
 #find out where flanks belong
-
 
 #MAP BREAKPOINTS TO AN ASSEMBLY AVAILABLE FOR PATCHING
 
@@ -48,10 +108,7 @@ else
     wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
     cat tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 | sort -k1,1n >${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
     #remove temporary wfmash file
-    #rm tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
-
-    #wfmash is replacing previous version with approximate mapping and mashmap
-    #mashmap --filter_mode one-to-one --threads ${threadCount} --perc_identity ${minIdentity} --noSplit --segLength 1000 -r ${patch_reference} -q flanks.${flank_name}.${assembly_name} -o ${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt > /dev/null 2>&1
+    rm tmp.${flank_name}.${assembly_name}.TO.${patch_reference_name}.txt
 fi
 
 wait
@@ -93,8 +150,11 @@ for file_name in "${file_names[@]}"; do
             echo "The breakpoint is not resolved in the assembly used for patching."
         fi
     else
-        echo "Skipping $file_name as the file does not have two rows. "
+        echo "==========================="
         echo "One of the flanks is not mapped successfully."
+        #call bash function to find out if adjusting the coordinates could help
+        adjust_coordinates_and_try_again
+        exit 13
     fi
 done
 
@@ -156,9 +216,11 @@ extract_variables() {
 
     # Print the extracted variables
     echo "For file $file_name:"
+    echo "\n"
     echo "GAP/BREAKPOINT contig name (6th column): $contig_name"
     echo "GAP/BREAKPOINT start (9th column from the first row): $gap_start"
     echo "GAP/BREAKPOINT end (8th column from the second row): $gap_end"
+    echo "\n"
 }
 
 # Extract coordinates from the reference used for patching
@@ -170,23 +232,24 @@ echo "Gap size is $gap_size"
 region=""
 # Check if the gap size is negative
 if [ "$gap_size" -lt 0 ]; then
-    echo "Negative gap sizes are currently not implemented. Exiting the script."
-    exit $gap_size
-    #echo "The gap_size is negative. We will be extracting reverse complement of the sequence."
-    #region=${contig_name}:${gap_end}-${gap_start}
-    #samtools faidx ${patch_reference} ${region} >to_be_reversed.${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
-    #seqtk seq -r to_be_reversed.${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa >${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
-    #rm to_be_reversed.${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
+    echo "==========================="
+    echo "Negative gap sizes ($gap_size) are currently not implemented. Exiting the script."
+    
+    #call bash function to find out if adjusting the coordinates could help
+    adjust_coordinates_and_try_again
+    exit 13
 else
     echo "The gap_size is positive."
     region=${contig_name}:${gap_start}-${gap_end}
     samtools faidx ${patch_reference} ${region} >${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
     #check to make sure the patch doesn't contain Ns
-    gaps_in_patch=$(seqtk cutN -g -n 10 ${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa)
-    num_gaps_in_patch=$(echo "$gaps_in_patch" | wc -l)
-
-    # Check if the output is not empty
-    if [ "$num_gaps_in_patch" -gt 0 ]; then
+    gap_file="gaps_in_patch.${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa"
+    seqtk cutN -g -n 10 ${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa >${gap_file}
+    
+    if [ ! -s "${gap_file}" ]; then
+        echo "No gaps found in the patch."
+        rm -f ${gap_file}
+    else
         echo "The number of gaps inside the patch is not empty. Exiting..."
         exit 1
     fi
@@ -215,8 +278,9 @@ cat "second_part.${original_contig}.fasta" | grep -v ">" | tr -d '\n' >>${chromo
 #reformat the final patched fasta chromosome
 cat ${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp | seqtk seq -l 60 >${chromosome}.PATCHED.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta
 rm -f ${chromosome}.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta.tmp
+echo -e "\n"
 echo "Merged concatenated fasta for ${chromosome} saved to" ${chromosome}.PATCHED.${order}.patched.${assembly_name}.with.${patch_reference_name}.fasta
-
+echo "PATCHING SUCCESSFULL."
 
 #remove files that are not needed
 #rm -f flanks.${flank_file}.${assembly_name}
