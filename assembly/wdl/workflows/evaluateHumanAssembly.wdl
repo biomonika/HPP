@@ -142,10 +142,7 @@ workflow evaluateHumanAssembly{
         File T2Tcontigs = assessCompletness.contigs
         File T2Tscaffolds = assessCompletness.scaffolds
         File unifiedAssembly = unifyAssembly.unifiedAssembly
-        File breakAnnotation_region = formatBreakAnnotation.formattedBreakAnnotation_region
-        File breakAnnotation_SD = formatBreakAnnotation.formattedBreakAnnotation_SD
-        File breakAnnotation_CENSAT = formatBreakAnnotation.formattedBreakAnnotation_CENSAT
-        File assembly_CHM13 = evaluate.mappedAssembly
+        File chromosome_names_from_CHM13 = evaluate.mappedAssembly
         File filteredFlanksBed = filterFlanks.filteredFlanksBed
         File bed_region = intersectBed.bed_region
         File bed_SD = intersectBed.bed_SD
