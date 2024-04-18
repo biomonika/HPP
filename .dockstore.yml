@@ -3,9 +3,9 @@ workflows:
    -  name: hifiasmHic2meryl
       subclass: WDL
       primaryDescriptorPath: /assembly/wdl/workflows/hifiasmHicHaplotype2meryl.wdl
-   -  name: assessT2Tcompletness
+   -  name: evaluateHumanAssembly
       subclass: WDL
-      primaryDescriptorPath: /assembly/wdl/workflows/assessAsemblyCompletness.wdl
+      primaryDescriptorPath: /assembly/wdl/workflows/evaluateHumanAssembly.wdl
    -  name: findAssemblyBreakpoints
       subclass: WDL
       primaryDescriptorPath: /assembly/wdl/workflows/findAssemblyBreakpoints.wdl
