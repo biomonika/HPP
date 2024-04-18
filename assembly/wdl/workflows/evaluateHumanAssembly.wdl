@@ -543,13 +543,12 @@ task createGenomeFile {
         set -u
         set -o xtrace
 
-        reference_name=basename(sub(sub(sub(reference, "\\.gz$", ""), "\\.fasta$", ""), "\\.fa$", "")) #remove the file extension
-        bioawk -c fastx '{ print $name, length($seq) }' < ~{reference} > ~{reference_name}.genomeFile.txt
+        bioawk -c fastx '{ print $name, length($seq) }' < ~{reference} > genomeFile.txt
 
     >>>
 
     output {
-        File genomeFile="${reference_name}.genomeFile.txt"
+        File genomeFile="genomeFile.txt"
     }
 
     runtime {
