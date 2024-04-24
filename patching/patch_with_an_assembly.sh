@@ -29,7 +29,17 @@ adjustment_for_inner_cut=$4 #if not patching at the ends, but cutting the edges 
 
 echo ${bed_file} ${patch_reference} ${haplotype}
 
-chromosome=$(echo "$bed_file" | cut -d'.' -f1)
+chromosome=$(echo "$bed_file" | cut -d'.' -f1) 
+case "$chromosome" in
+    chr1|chr2|chr3|chr4|chr5|chr6|chr7|chr8|chr9|chr10|chr11|chr12|chr13|chr14|chr15|chr16|chr17|chr18|chr19|chr20|chr21|chr22|chrX|chrY)
+        echo "Input chromosome is valid: $chromosome"
+        ;;
+    *)
+        echo "Input chromosome is not valid. Quitting..."
+        exit 1
+        ;;
+esac
+
 order=$(echo "$bed_file" | cut -d'.' -f8)
 
 #extract flanks and find out where they belong
@@ -159,22 +169,27 @@ second_contig=$(awk 'NR==2 {print $1}' "${chr_mashmap}")
 first_contig_length=$(awk 'NR==1 {print $2}' "${chr_mashmap}")
 second_contig_length=$(awk 'NR==2 {print $2}' "${chr_mashmap}")
 
+
+samtools faidx ${assembly} ${first_contig} > ${first_contig}.fasta
+samtools faidx ${assembly} ${second_contig} > ${second_contig}.fasta
+
+first_contig_length=$(bioawk -c fastx '{print length($seq)}' "${first_contig}.fasta")
+second_contig_length=$(bioawk -c fastx '{print length($seq)}' "${second_contig}.fasta")
+
 if [ -z "$adjustment_for_inner_cut" ]; then
     echo "The two contigs used for patching will be used in full."
-    
-    samtools faidx ${assembly} ${first_contig} > ${first_contig}.fasta
-    samtools faidx ${assembly} ${second_contig} > ${second_contig}.fasta
 else
     echo "The two contigs used for patching will _not_ be used in full."
     echo "We will cut out $adjustment_for_inner_cut from the edges."
-    echo "Will use: ${first_contig}:0-${end_coordinate}"
-    echo "Will use: ${second_contig}:${start_coordinate}-${second_contig_length}"
     
     end_coordinate=$((first_contig_length - adjustment_for_inner_cut))
     samtools faidx ${assembly} "${first_contig}:0-${end_coordinate}" > ${first_contig}.fasta
     
-    start_coordinate=$((0 + adjustment_for_inner_cut))
+    start_coordinate=$adjustment_for_inner_cut
     samtools faidx ${assembly} "${second_contig}:${start_coordinate}-${second_contig_length}" > ${second_contig}.fasta
+
+    echo "Will use: ${first_contig}:0-${end_coordinate}"
+    echo "Will use: ${second_contig}:${start_coordinate}-${second_contig_length}"
 fi
 
 # Use head to extract the first line of each file
@@ -187,6 +202,28 @@ echo ">"${chromosome}.$(echo "original_$header1" | tr -d '>')"+"$(echo "${patch_
 cat "${first_contig}.fasta" | grep -v ">" >>${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
 cat "${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa" | grep -v ">" >>${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
 cat "${second_contig}.fasta" | grep -v ">" >>${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
+
+#calculate the length of the patch
+patch_length=$(bioawk -c fastx '{ print length($seq) }' "${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa")
+first_contig_length=$(bioawk -c fastx '{ print length($seq) }' "${first_contig}.fasta")
+second_contig_length=$(bioawk -c fastx '{ print length($seq) }' "${second_contig}.fasta")
+
+echo "The length of the PATCH is: ${patch_length}"
+echo "The first_contig_length: ${first_contig_length}"
+echo "The second_contig_length: ${second_contig_length}"
+
+patch_neighborhood_size=10000
+bed_file_of_patch="${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.bed"
+
+#when checking our patch in IGV, what coordinates should we use for each junction? 
+patch_neighborhood_J1_start=$((first_contig_length - patch_neighborhood_size))
+patch_neighborhood_J1_end=$((first_contig_length + patch_neighborhood_size))
+patch_neighborhood_J2_start=$((first_contig_length + patch_length - patch_neighborhood_size))
+patch_neighborhood_J2_end=$((first_contig_length + patch_length + patch_neighborhood_size))
+
+#there will be two junctions per each successfull patch
+echo -e "${chromosome}\t${patch_neighborhood_J1_start}\t${patch_neighborhood_J1_end}\tJ1;gap_size:${gap_size};patch_length:${patch_length}" >${bed_file_of_patch}
+echo -e "${chromosome}\t${patch_neighborhood_J2_start}\t${patch_neighborhood_J2_end}\tJ2;gap_size:${gap_size};patch_length:${patch_length}" >>${bed_file_of_patch}
 
 #reformat the final patched fasta chromosome
 seqtk seq -L 0 ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp >${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta
