@@ -77,7 +77,7 @@ done
 #sequences defined in bed files should also be writen to fasta files
 for bed in chr*.${assembly_name}.mashmap.txt*bed; do 
     echo $bed
-    bedtools getfasta -fi ${assembly} -bed ${bed} -name >flanks.${bed}.fa
+    bedtools getfasta -fi ${assembly} -bed ${bed} -name >${bed}.fa
 done
 
 echo "Done."
