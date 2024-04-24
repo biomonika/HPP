@@ -43,8 +43,13 @@ esac
 order=$(echo "$bed_file" | cut -d'.' -f8)
 
 #extract flanks and find out where they belong
-bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >flanks.${bed_file}.${patch_reference_name}
-flank_file=flanks.${bed_file}.${patch_reference_name}
+if [ ! -f "${bed_file}.${patch_reference_name}.fa" ]; then
+    echo "Flank file does not exist."
+    bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >${bed_file}.${patch_reference_name}.fa
+else
+    echo "Flank exists. It will not be extracted again"
+fi
+flank_file=${bed_file}.${patch_reference_name}.fa
 
 #BREAKPOINTS TO AN ASSEMBLY AVAILABLE FOR PATCHING
 
