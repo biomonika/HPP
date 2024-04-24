@@ -148,13 +148,14 @@ echo "Gap size is $gap_size"
 region=""
 # Check if the gap size is negative
 if [ "$gap_size" -lt 0 ]; then
-    echo "The gap_size is negative. We will be extracting reverse complement of the sequence."
-    region=${contig_name}:${gap_end}-${gap_start}
-    samtools faidx ${patch_reference} ${region} >to_be_reversed.${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
-    seqtk seq -r to_be_reversed.${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa >${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
-    rm to_be_reversed.${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
+    echo "==========================="
+    echo "Negative gap sizes ($gap_size) are currently not implemented. Exiting the script."
+    
+    exit 13
 else
     echo "The gap_size is positive."
+    #going from bed to gff, increment start coordinate
+    gap_start=$((gap_start+1))
     region=${contig_name}:${gap_start}-${gap_end}
     samtools faidx ${patch_reference} ${region} >${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
 fi
