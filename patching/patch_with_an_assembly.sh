@@ -43,13 +43,13 @@ esac
 order=$(echo "$bed_file" | cut -d'.' -f8)
 
 #extract flanks and find out where they belong
-if [ ! -f "${bed_file}.${patch_reference_name}.fa" ]; then
+if [ ! -f "${bed_file}.fa" ]; then
     echo "Flank file does not exist."
     bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >${bed_file}.${patch_reference_name}.fa
 else
     echo "Flank exists. It will not be extracted again"
 fi
-flank_file=${bed_file}.${patch_reference_name}.fa
+flank_file=${bed_file}.fa
 
 #BREAKPOINTS TO AN ASSEMBLY AVAILABLE FOR PATCHING
 
@@ -58,7 +58,7 @@ if [ -e "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
 else
     echo "Wfmash does not exist. Creating now."
     wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
-    cat tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 | sort -k1,1n >${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    cat tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 >${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
     #remove temporary wfmash file
     rm -f tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
 fi
