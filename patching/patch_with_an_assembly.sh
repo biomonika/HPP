@@ -137,9 +137,25 @@ echo ""
 #Get coordinates of the GAP/BREAKPOINT REGION
 gap_start=""
 gap_end=""
+alignment_padding_left="" #if left flank does not align fully, this is how much of a padding there is
+alignment_padding_right="" #if right flank does not align fully, this is how much of a padding there is
 contig_name=""
 extract_variables() {
     file_name=$1
+    
+    flank_size=$(awk 'NR==1 {print $2}' "$file_name")
+    left_flank_start=$(awk 'NR==1 {print $3}' "$file_name")
+    left_flank_end=$(awk 'NR==1 {print $4}' "$file_name")
+    right_flank_start=$(awk 'NR==2 {print $3}' "$file_name")
+
+    #if the left flank does not align fully, the first sequence should be truncated by alignment_padding_left
+    alignment_padding_left=$((flank_size - left_flank_end)) 
+    #if the right flank does not align fully, the second sequence should be truncated by alignment_padding_right
+    alignment_padding_right=$right_flank_start
+
+    echo "alignment_padding_left: $alignment_padding_left"
+    echo "alignment_padding_right: $alignment_padding_right"
+
     # Extract 9th column from the first row
     gap_start=$(awk 'NR==1 {print $9}' "$file_name")
     # Extract 10th column from the second row
@@ -192,16 +208,20 @@ samtools faidx ${assembly} ${second_contig} > ${second_contig}.fasta
 first_contig_length=$(bioawk -c fastx '{print length($seq)}' "${first_contig}.fasta")
 second_contig_length=$(bioawk -c fastx '{print length($seq)}' "${second_contig}.fasta")
 
-if [ -z "$adjustment_for_inner_cut" ]; then
-    echo "The two contigs used for patching will be used in full."
+if [ ! -z "$adjustment_for_inner_cut" ]; then
+    echo "adjustment_for_inner_cut is defined, and we thus must extend the padding"
+    alignment_padding_left=$((alignment_padding_left - adjustment_for_inner_cut))
+    alignment_padding_right=$((alignment_padding_right + adjustment_for_inner_cut))
+    echo "alignment_padding_left: $alignment_padding_left"
+    echo "alignment_padding_right: $alignment_padding_right"
+
 else
-    echo "The two contigs used for patching will _not_ be used in full."
-    echo "We will cut out $adjustment_for_inner_cut from the edges."
-    
-    end_coordinate=$((first_contig_length - adjustment_for_inner_cut))
+    echo "adjustment_for_inner_cut is not defined, so we only need to adjust flanks based on mapping results"
+
+    end_coordinate=$((first_contig_length - alignment_padding_left))
     samtools faidx ${assembly} "${first_contig}:0-${end_coordinate}" > ${first_contig}.fasta
     
-    start_coordinate=$adjustment_for_inner_cut
+    start_coordinate=$alignment_padding_right
     samtools faidx ${assembly} "${second_contig}:${start_coordinate}-${second_contig_length}" > ${second_contig}.fasta
 
     echo "Will use: ${first_contig}:0-${end_coordinate}"
