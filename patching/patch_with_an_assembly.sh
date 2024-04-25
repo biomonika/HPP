@@ -49,8 +49,8 @@ order=$(echo "$bed_file" | cut -d'.' -f8)
 
 #extract flanks and find out where they belong
 if [ ! -f "${bed_file}.fa" ]; then
-    echo "Flank file does not exist."
-    bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >${bed_file}.${patch_reference_name}.fa
+    echo "Flank file does not exist. Creating now."
+    bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >${bed_file}.fa
 else
     echo "Flank exists. It will not be extracted again"
 fi
@@ -86,47 +86,38 @@ fi
 
 wait
 
-file_names=("${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt")
+file_name="${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt"
 
 max_avg=0
 max_file=""
 
-# Loop through each file
-for file_name in "${file_names[@]}"; do
-    echo "Analyzing mashmap file with flanks mapped to the reference used for patching. "
-    num_lines=$(wc -l < "$file_name")
 
-    # Check if the number of lines is equal to two
-    if [ "$num_lines" -eq 2 ]; then
-        # Check if the 6th column is identical within the file
-        if [ "$(awk '{print $6}' "$file_name" | uniq | wc -l)" -eq 1 ]; then
-            
-            first_coordinate_of_gap=$(awk 'NR==1 {print $9}' "${file_name}")
-            second_coordinate_of_gap=$(awk 'NR==2 {print $8}' "${file_name}")
-            test_gap=$((second_coordinate_of_gap - first_coordinate_of_gap))
+echo "Analyzing mashmap file with flanks mapped to the reference used for patching. "
+num_lines=$(wc -l < "$file_name")
+
+# Check if the number of lines is equal to two
+if [ "$num_lines" -eq 2 ]; then
+    # Check if the 6th column is identical within the file
+    if [ "$(awk '{print $6}' "$file_name" | uniq | wc -l)" -eq 1 ]; then
         
-            echo "--------"
-            echo "$file_name"
-            echo "test_gap $test_gap"
-            echo "--------"
+        first_coordinate_of_gap=$(awk 'NR==1 {print $9}' "${file_name}")
+        second_coordinate_of_gap=$(awk 'NR==2 {print $8}' "${file_name}")
+        test_gap=$((second_coordinate_of_gap - first_coordinate_of_gap))
+    
+        echo "--------"
+        echo "$file_name"
+        echo "test_gap $test_gap"
+        echo "--------"
 
-            # Calculate the average of numbers in the 10th column
-            avg=$(awk '{sum += $NF} END {print sum/NR}' "$file_name")
-
-            # Compare averages
-            if (( $(echo "$avg > $max_avg" | bc -l) )); then
-                max_avg=$avg
-                max_file=$file_name
-            fi
-        else
-            echo "Skipping $file_name as the 6th column is not identical (different contig names)."
-            echo "The breakpoint is not resolved in the assembly used for patching."
-        fi
+        max_file=$file_name
     else
-        echo "Skipping $file_name as the file does not have two rows. "
-        echo "One of the flanks is not mapped successfully."
+        echo "Skipping $file_name as the 6th column is not identical (different contig names)."
+        echo "The breakpoint is not resolved in the assembly used for patching."
     fi
-done
+else
+    echo "Skipping $file_name as the file does not have two rows. "
+    echo "One of the flanks is not mapped successfully."
+fi
 
 echo ""
 
@@ -197,6 +188,8 @@ else
     samtools faidx ${patch_reference} ${region} >${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
 fi
 
+echo "==========================="
+
 # Extract sequence names of the contigs we will be merging
 echo "Extract sequence names of the contigs we will be merging"
 chr_mashmap=${bed_file}
@@ -220,12 +213,13 @@ if [ ! -z "$adjustment_for_inner_cut" ]; then
     echo "adjustment_for_inner_cut is defined, and we thus must extend the padding"
     alignment_padding_left=$((alignment_padding_left - adjustment_for_inner_cut))
     alignment_padding_right=$((alignment_padding_right + adjustment_for_inner_cut))
-    echo "alignment_padding_left: $alignment_padding_left"
-    echo "alignment_padding_right: $alignment_padding_right"
 
 else
     echo "adjustment_for_inner_cut is not defined, so we only need to adjust flanks based on mapping results"
 fi
+
+echo "alignment_padding_left: $alignment_padding_left"
+echo "alignment_padding_right: $alignment_padding_right"
 
 end_coordinate=$((first_contig_length - alignment_padding_left))
 samtools faidx ${assembly} "${first_contig}:0-${end_coordinate}" > ${first_contig}.fasta
@@ -272,6 +266,8 @@ echo -e "${chromosome}\t${patch_neighborhood_J2_start}\t${patch_neighborhood_J2_
 #reformat the final patched fasta chromosome
 seqtk seq -L 0 ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp >${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta
 rm -f ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
+
+echo -e "\n"
 echo "Merged concatenated fasta for ${chromosome} saved to" ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta
 
 
