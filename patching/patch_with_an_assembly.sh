@@ -27,6 +27,11 @@ patch_reference_name=$(basename -- "$patch_reference")
 patch_reference_name="${patch_reference_name%.*}"
 adjustment_for_inner_cut=$4 #if not patching at the ends, but cutting the edges of the broken contigs (zooming out approach)
 
+if [ "$#" -lt 3 ]; then
+    echo "Error: At least 3 input arguments are required."
+    exit 1
+fi
+
 echo ${bed_file} ${patch_reference} ${haplotype}
 
 chromosome=$(echo "$bed_file" | cut -d'.' -f1) 
@@ -58,6 +63,12 @@ if [ -e "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
 else
     echo "Wfmash does not exist. Creating now."
     wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp1.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+
+    if [ ! -s "tmp1.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
+        echo "Wfmash file is empty. Flanks were not mapped. Exiting script."
+        rm tmp1.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+        exit 1
+    fi
     
     cat tmp1.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 >tmp2.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
 
@@ -71,11 +82,6 @@ else
 
     #remove temporary wfmash file
     rm -f tmp1.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt tmp2.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
-fi
-
-if [ ! -s "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
-    echo "Wfmash file is empty. Flanks were not mapped. Exiting script."
-    exit 1
 fi
 
 wait
@@ -137,8 +143,8 @@ echo ""
 #Get coordinates of the GAP/BREAKPOINT REGION
 gap_start=""
 gap_end=""
-alignment_padding_left="" #if left flank does not align fully, this is how much of a padding there is
-alignment_padding_right="" #if right flank does not align fully, this is how much of a padding there is
+alignment_padding_left=0 #if left flank does not align fully, this is how much of a padding there is
+alignment_padding_right=0 #if right flank does not align fully, this is how much of a padding there is
 contig_name=""
 extract_variables() {
     file_name=$1
@@ -194,19 +200,21 @@ fi
 # Extract sequence names of the contigs we will be merging
 echo "Extract sequence names of the contigs we will be merging"
 chr_mashmap=${bed_file}
-sequence_names=$(awk '{print $1}' ${chr_mashmap})
+sequence_names=$(awk '{print $1}' ${bed_file})
 
 first_contig=$(awk 'NR==1 {print $1}' "${chr_mashmap}")
 second_contig=$(awk 'NR==2 {print $1}' "${chr_mashmap}")
-first_contig_length=$(awk 'NR==1 {print $2}' "${chr_mashmap}")
-second_contig_length=$(awk 'NR==2 {print $2}' "${chr_mashmap}")
 
+samtools faidx ${assembly} ${first_contig} > original.${first_contig}.fasta
+samtools faidx ${assembly} ${second_contig} > original.${second_contig}.fasta
 
-samtools faidx ${assembly} ${first_contig} > ${first_contig}.fasta
-samtools faidx ${assembly} ${second_contig} > ${second_contig}.fasta
+first_contig_length=$(bioawk -c fastx '{print length($seq)}' "original.${first_contig}.fasta")
+second_contig_length=$(bioawk -c fastx '{print length($seq)}' "original.${second_contig}.fasta")
 
-first_contig_length=$(bioawk -c fastx '{print length($seq)}' "${first_contig}.fasta")
-second_contig_length=$(bioawk -c fastx '{print length($seq)}' "${second_contig}.fasta")
+echo "first_contig_length: $first_contig_length"
+echo "second_contig_length: $second_contig_length"
+
+rm -r original.${first_contig}.fasta original.${second_contig}.fasta
 
 if [ ! -z "$adjustment_for_inner_cut" ]; then
     echo "adjustment_for_inner_cut is defined, and we thus must extend the padding"
@@ -217,16 +225,16 @@ if [ ! -z "$adjustment_for_inner_cut" ]; then
 
 else
     echo "adjustment_for_inner_cut is not defined, so we only need to adjust flanks based on mapping results"
-
-    end_coordinate=$((first_contig_length - alignment_padding_left))
-    samtools faidx ${assembly} "${first_contig}:0-${end_coordinate}" > ${first_contig}.fasta
-    
-    start_coordinate=$alignment_padding_right
-    samtools faidx ${assembly} "${second_contig}:${start_coordinate}-${second_contig_length}" > ${second_contig}.fasta
-
-    echo "Will use: ${first_contig}:0-${end_coordinate}"
-    echo "Will use: ${second_contig}:${start_coordinate}-${second_contig_length}"
 fi
+
+end_coordinate=$((first_contig_length - alignment_padding_left))
+samtools faidx ${assembly} "${first_contig}:0-${end_coordinate}" > ${first_contig}.fasta
+
+start_coordinate=$alignment_padding_right
+samtools faidx ${assembly} "${second_contig}:${start_coordinate}-${second_contig_length}" > ${second_contig}.fasta
+
+echo "Will use: ${first_contig}:0-${end_coordinate}"
+echo "Will use: ${second_contig}:${start_coordinate}-${second_contig_length}"
 
 # Use head to extract the first line of each file
 header1=$(head -n 1 "${first_contig}.fasta")
