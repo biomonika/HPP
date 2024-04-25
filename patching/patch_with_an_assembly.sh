@@ -57,10 +57,20 @@ if [ -e "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
     echo "Wfmash file exists and won't be re-written."
 else
     echo "Wfmash does not exist. Creating now."
-    wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
-    cat tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 >${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp1.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    
+    cat tmp1.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 >tmp2.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+
+    # Extract header names from the flanks file
+    headers=$(awk '/^>/{print substr($1, 2)}' "$flank_file")
+
+    # Mashmap output needs to be in the same order as the flanks, since the order matters for patching
+    for header in $headers; do
+        grep "$header" "tmp2.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" >>${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    done
+
     #remove temporary wfmash file
-    rm -f tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    rm -f tmp1.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt tmp2.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
 fi
 
 if [ ! -s "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
