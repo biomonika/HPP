@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=swap_acrocentrics.20240327
+#SBATCH --job-name=swap_acrocentrics.20240426
 #SBATCH --partition=medium
 #SBATCH --mail-user=mcechova@ucsc.edu
 #SBATCH --nodes=1
 #SBATCH --mem=6gb
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --output=swap_acrocentrics.20240327.%j.log
+#SBATCH --output=swap_acrocentrics.20240426.%j.log
 
 set -e
 set -x
@@ -25,12 +25,19 @@ conda activate /private/home/mcechova/conda/alignment
 #6. associated censat track of the assembly that will be used for patching
 #7. the name of the chromosome that we want to patch
 
-assembly_to_be_patched="full.maternal.contigs.fa"
-assembly_to_be_patched_mashmap="mashmap/full.maternal.contigs.mashmap.txt"
-assembly_to_be_patched_censat_track="full.maternal.contigs.cenSat.bed"
-assembly_reference="duplex.maternal.contigs.fa"
-assembly_reference_mashmap="mashmap/duplex.maternal.contigs.mashmap.txt"
-assembly_reference_censat_track="duplex.maternal.contigs.cenSat.bed"
+assembly_to_be_patched="PAN027.fully_phased.maternal.patched.fa"
+assembly_to_be_patched_mashmap="mashmap/PAN027.fully_phased.maternal.patched.mashmap.txt"
+assembly_to_be_patched_censat_track="censat/PAN027.fully_phased.acrocentric.MATERNAL.patched.cenSat.bed"
+assembly_reference="../maternal/duplex.maternal.scaffolds.fa"
+assembly_reference_mashmap="../maternal/mashmap/duplex.maternal.scaffolds.mashmap.txt"
+assembly_reference_censat_track="../maternal/censat/duplex.maternal.scaffolds.cenSat.bed"
+
+#assembly_to_be_patched="PAN027.fully_phased.paternal.patched.fa"
+#assembly_to_be_patched_mashmap="mashmap/PAN027.fully_phased.paternal.patched.mashmap.txt"
+#assembly_to_be_patched_censat_track="censat/PAN027.fully_phased.acrocentric.paternal.patched.cenSat.bed"
+#assembly_reference="../maternal/duplex.paternal.scaffolds.fa"
+#assembly_reference_mashmap="../maternal/mashmap/duplex.paternal.scaffolds.mashmap.txt"
+#assembly_reference_censat_track="../maternal/censat/duplex.paternal.scaffolds.cenSat.bed"
 
 assembly_to_be_patched_name=$(basename -- "$assembly_to_be_patched")
 assembly_to_be_patched_name="${assembly_to_be_patched_name%.*}"
@@ -42,47 +49,52 @@ acrocentric_chromosome=("chr13" "chr14" "chr15" "chr21" "chr22")
 swap_chromosome() {
 	chromosome=$1
 
-	#find where rDNA coordinates start
+	#find where activeHOR coordinates start
 	contig_name_assembly_to_be_patched=`grep ${chromosome} ${assembly_to_be_patched_mashmap} | cut -d' ' -f1`
 	contig_length_assembly_to_be_patched=`grep ${chromosome} ${assembly_to_be_patched_mashmap} | cut -d' ' -f2`
 	contig_name_assembly_reference=`grep ${chromosome} ${assembly_reference_mashmap} | cut -d' ' -f1`
 	contig_length_assembly_reference=`grep ${chromosome} ${assembly_reference_mashmap} | cut -d' ' -f2`
 
-	#we need to find rDNA of length at least 1kb, and that's when we stop
-	#this first part of the assembly will be ignored
-	#even if we find multiple rDNA hits, we are only interested in the first one of sufficient length
-	cat ${assembly_to_be_patched_censat_track} | egrep ${contig_name_assembly_to_be_patched} | egrep "rDNA" | bedtools sort | bedtools merge | awk '$3 - $2 > 10000' >tmp.${chromosome}.rDNA_start_assembly_to_be_patched.${contig_name_assembly_to_be_patched}.txt
+	echo "contig_name_assembly_to_be_patched: $contig_name_assembly_to_be_patched"
+	echo "contig_length_assembly_to_be_patched: $contig_length_assembly_to_be_patched"
+	echo "contig_name_assembly_reference: $contig_name_assembly_reference"
+	echo "contig_length_assembly_reference: $contig_length_assembly_reference"
 
-	if [ ! -s "tmp.${chromosome}.rDNA_start_assembly_to_be_patched.${contig_name_assembly_to_be_patched}.txt" ]; then
-    	echo "Not sufficient rDNA signal detected. Exiting script."
+	#we need to find activeHOR, and that's when we stop
+	#this first part of the assembly will be ignored
+	#even if we find multiple activeHOR hits, we are only interested in the first one of sufficient length
+	cat ${assembly_to_be_patched_censat_track} | egrep ${contig_name_assembly_to_be_patched} | egrep "active_hor" | bedtools sort | bedtools merge | awk '$3 - $2 > 10000' >tmp.${chromosome}.activeHOR_start_assembly_to_be_patched.${contig_name_assembly_to_be_patched}.txt
+
+	if [ ! -s "tmp.${chromosome}.activeHOR_start_assembly_to_be_patched.${contig_name_assembly_to_be_patched}.txt" ]; then
+    	echo "Not sufficient activeHOR signal detected. Exiting script."
     	exit 1
 	fi
 	
 	#write all hits into a temporary file, only use the first
-	rDNA_start_assembly_to_be_patched=`cat tmp.${chromosome}.rDNA_start_assembly_to_be_patched.${contig_name_assembly_to_be_patched}.txt | head -n 1 | cut -f2`
+	activeHOR_start_assembly_to_be_patched=`cat tmp.${chromosome}.activeHOR_start_assembly_to_be_patched.${contig_name_assembly_to_be_patched}.txt | head -n 1 | cut -f2`
 
-	cat ${assembly_reference_censat_track} | egrep ${contig_name_assembly_reference} | egrep "rDNA" | bedtools sort | bedtools merge | awk '$3 - $2 > 10000' >tmp.${chromosome}.rDNA_start_assembly_reference.${contig_name_assembly_reference}.txt
+	cat ${assembly_reference_censat_track} | egrep ${contig_name_assembly_reference} | egrep "active_hor" | bedtools sort | bedtools merge | awk '$3 - $2 > 10000' >tmp.${chromosome}.activeHOR_start_assembly_reference.${contig_name_assembly_reference}.txt
 
-	if [ ! -s "tmp.${chromosome}.rDNA_start_assembly_reference.${contig_name_assembly_reference}.txt" ]; then
-    	echo "Not sufficient rDNA signal detected. Exiting script."
+	if [ ! -s "tmp.${chromosome}.activeHOR_start_assembly_reference.${contig_name_assembly_reference}.txt" ]; then
+    	echo "Not sufficient activeHOR signal detected. Exiting script."
     	exit 1
 	fi
 
 	#write all hits into a temporary file, only use the first
-	rDNA_start_assembly_reference=`cat tmp.${chromosome}.rDNA_start_assembly_reference.${contig_name_assembly_reference}.txt | head -n 1 | cut -f2`
+	activeHOR_start_assembly_reference=`cat tmp.${chromosome}.activeHOR_start_assembly_reference.${contig_name_assembly_reference}.txt | head -n 1 | cut -f2`
 
 	#remove unnecessary temporary files
-	#rm -f tmp.${chromosome}.rDNA_start_assembly_to_be_patched.${contig_name_assembly_to_be_patched}.txt
-	#rm -f tmp.${chromosome}.rDNA_start_assembly_reference.${contig_name_assembly_reference}.txt
+	#rm -f tmp.${chromosome}.activeHOR_start_assembly_to_be_patched.${contig_name_assembly_to_be_patched}.txt
+	#rm -f tmp.${chromosome}.activeHOR_start_assembly_reference.${contig_name_assembly_reference}.txt
 
-	#only keep part of the assembly AFTER the first rDNA
-	region=${contig_name_assembly_to_be_patched}:${rDNA_start_assembly_to_be_patched}-${contig_length}
+	#only keep part of the assembly AFTER the first activeHOR
+	region=${contig_name_assembly_to_be_patched}:${activeHOR_start_assembly_to_be_patched}-${contig_length}
 	echo ${region}
 	samtools faidx ${assembly_to_be_patched} ${region} >${assembly_to_be_patched_name}.toKeep.fa
 
 
-	#only keep part of the assembly BEFORE the first rDNA
-	region=${contig_name_assembly_reference}:0-${rDNA_start_assembly_reference}
+	#only keep part of the assembly BEFORE the first activeHOR
+	region=${contig_name_assembly_reference}:0-${activeHOR_start_assembly_reference}
 	echo ${region}
 	samtools faidx ${assembly_reference} ${region} >${assembly_reference_name}.toKeep.fa
 
@@ -111,4 +123,3 @@ done
 
 echo "Done."
 date
-
