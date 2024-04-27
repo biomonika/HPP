@@ -25,19 +25,19 @@ conda activate /private/home/mcechova/conda/alignment
 #6. associated censat track of the assembly that will be used for patching
 #7. the name of the chromosome that we want to patch
 
-#assembly_to_be_patched="PAN027.fully_phased.maternal.patched.fa"
-#assembly_to_be_patched_mashmap="mashmap/PAN027.fully_phased.maternal.patched.mashmap.txt"
-#assembly_to_be_patched_censat_track="censat/PAN027.fully_phased.acrocentric.MATERNAL.patched.cenSat.bed"
-#assembly_reference="../maternal/duplex.maternal.scaffolds.fa"
-#assembly_reference_mashmap="../maternal/mashmap/duplex.maternal.scaffolds.mashmap.txt"
-#assembly_reference_censat_track="../maternal/censat/duplex.maternal.scaffolds.cenSat.bed"
+assembly_to_be_patched="PAN027.fully_phased.maternal.patched.fa"
+assembly_to_be_patched_mashmap="mashmap/PAN027.fully_phased.maternal.patched.mashmap.txt"
+assembly_to_be_patched_censat_track="censat/PAN027.fully_phased.acrocentric.maternal.patched.cenSat.bed"
+assembly_reference="../maternal/duplex.maternal.scaffolds.fa"
+assembly_reference_mashmap="../maternal/mashmap/duplex.maternal.scaffolds.mashmap.txt"
+assembly_reference_censat_track="../maternal/censat/duplex.maternal.scaffolds.cenSat.bed"
 
-assembly_to_be_patched="PAN027.fully_phased.paternal.patched.fa"
-assembly_to_be_patched_mashmap="mashmap/PAN027.fully_phased.paternal.patched.mashmap.txt"
-assembly_to_be_patched_censat_track="censat/PAN027.fully_phased.acrocentric.paternal.patched.cenSat.bed"
-assembly_reference="../paternal/duplex.paternal.scaffolds.fa"
-assembly_reference_mashmap="../paternal/mashmap/duplex.paternal.scaffolds.mashmap.txt"
-assembly_reference_censat_track="../paternal/censat/duplex.paternal.scaffolds.cenSat.bed"
+#assembly_to_be_patched="PAN027.fully_phased.paternal.patched.fa"
+#assembly_to_be_patched_mashmap="mashmap/PAN027.fully_phased.paternal.patched.mashmap.txt"
+#assembly_to_be_patched_censat_track="censat/PAN027.fully_phased.acrocentric.paternal.patched.cenSat.bed"
+#assembly_reference="../paternal/duplex.paternal.scaffolds.fa"
+#assembly_reference_mashmap="../paternal/mashmap/duplex.paternal.scaffolds.mashmap.txt"
+#assembly_reference_censat_track="../paternal/censat/duplex.paternal.scaffolds.cenSat.bed"
 
 if [ ! -f "${assembly_to_be_patched}" ]; then
     echo "${assembly_to_be_patched} file not found. Exiting script."
