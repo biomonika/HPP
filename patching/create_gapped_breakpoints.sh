@@ -65,7 +65,7 @@ extract_flanks() {
 
 #identify stretches of Ns
 #this is followed by merging the stretches of Ns, up to the distance of the flank (so that the flanks are always non-overlapping)
-seqtk cutN -g -n ${min_gap_size} ${assembly} | bedtools merge -d ${flank_size} >gaps.all.${assembly_name}.bed
+seqtk gap -l ${min_gap_size} ${assembly} | bedtools merge -d ${flank_size} >gaps.all.${assembly_name}.bed
 
 conda activate /private/home/mcechova/conda/QC
 
@@ -82,9 +82,11 @@ for contig in `cat gaps.all.${assembly_name}.bed | cut -f1 | sort | uniq`; do
     while IFS= read -r gap || [ -n "$gap" ]; do
         if [[ -n $gap ]]; then  # Check if the line is non-empty
             bed_file="${contig}.gaps.${assembly_name}.order${order}.bed"
-            extract_flanks "$gap" "$flank_size" "$contig" "$contig_length" >${bed_file}
+
+            chromosome=$(echo "$contig" | awk -F. '{print $1}')
+            extract_flanks "$gap" "$flank_size" "$contig" "$chromosome" >${bed_file}
             #extract sequence as well
-            bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >flanks.${bed_file}.fa
+            bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >${bed_file}.fa
             ((order++)) #increment the order if multiple gaps per chromosome
         fi
     done < gaps."$contig".bed
