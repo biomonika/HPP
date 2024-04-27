@@ -372,7 +372,7 @@ task runSeqtk {
         set -o xtrace
 
         #search the assembly for the telomeric repeat
-        seqtk telo ~{assembly} > ~{assembly_name}.telo.bed 2> ~{assembly_name}.telo.count
+        seqtk telo -s 10 ~{assembly} > ~{assembly_name}.telo.bed 2> ~{assembly_name}.telo.count
 
         #check telomeres at the beginning of chromosomes
         awk -v maxdist=~{telomericMaxDistance} -v minlen=~{telomericMinLength} '{
