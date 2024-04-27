@@ -51,13 +51,13 @@ while IFS= read -r line; do
     # Telomere is present at the beginning
     if [ "$start" -eq 0 ]; then
         echo "Start coordinate is 0 for chromosome: $chromosome"
-        echo $line >${assembly_name}.telomeres.start.txt
+        echo $line >>${assembly_name}.telomeres.start.txt
     fi
 
     # Telomere is present at the end
     if [ "$end" -eq "$length" ]; then
         echo "End coordinate is equal to length for chromosome: $chromosome"
-        echo $line >${assembly_name}.telomeres.end.txt
+        echo $line >>${assembly_name}.telomeres.end.txt
     fi
 done < "${assembly_name}.telomeres.txt"
 
@@ -90,8 +90,8 @@ for chromosome in "${chromosomes[@]}"; do
 done
 
 #remove unnecessary files
-rm -r ${assembly_name}.telomeres.start.txt
-rm -r ${assembly_name}.telomeres.end.txt
+#rm -r ${assembly_name}.telomeres.start.txt
+#rm -r ${assembly_name}.telomeres.end.txt
 
 echo "Done."
 date
