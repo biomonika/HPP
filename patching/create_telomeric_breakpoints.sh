@@ -72,6 +72,7 @@ for chromosome in "${chromosomes[@]}"; do
         echo "Telomere NOT found in ${assembly_name}.telomeres.start.txt"
         echo "Bed file will be created."
         echo -e "$chromosome\t0\t$flank_size" > "${chromosome}.${assembly_name}.telomeres.start.bed"
+        bedtools getfasta -fi ${assembly} -bed "${chromosome}.${assembly_name}.telomeres.start.bed" >"${chromosome}.${assembly_name}.telomeres.start.bed.fa"
     fi
 
     if grep -q "$chromosome" "${assembly_name}.telomeres.end.txt"; then
@@ -83,15 +84,14 @@ for chromosome in "${chromosomes[@]}"; do
         chromosome_length=$(bioawk -c fastx '{ print length($seq) }' < "tmp.${chromosome}.fa")
         rm -r "tmp.${chromosome}.fa"
         flank_threshold=$((chromosome_length - flank_size))
-        echo -e "$chromosome\t$flank_threshold\t$chromosome_length" > "${chromosome}.${chromosome_length}.telomeres.start.bed"
-        bedtools getfasta -fi ${assembly} -bed "${chromosome}.${chromosome_length}.telomeres.start.bed" >"${chromosome}.${chromosome_length}.telomeres.start.bed.fa"
-
+        echo -e "$chromosome\t$flank_threshold\t$chromosome_length" > "${chromosome}.${assembly_name}.telomeres.end.bed"
+        bedtools getfasta -fi ${assembly} -bed "${chromosome}.${assembly_name}.telomeres.end.bed" >"${chromosome}.${assembly_name}.telomeres.end.bed.fa"
     fi
 done
 
 #remove unnecessary files
-#rm -r ${assembly_name}.telomeres.start.txt
-#rm -r ${assembly_name}.telomeres.end.txt
+rm -r ${assembly_name}.telomeres.start.txt
+rm -r ${assembly_name}.telomeres.end.txt
 
 echo "Done."
 date
