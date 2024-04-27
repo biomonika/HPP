@@ -81,7 +81,7 @@ for chromosome in "${chromosomes[@]}"; do
         echo "Bed file will be created."
         samtools faidx ${assembly} $chromosome >tmp.${chromosome}.fa
         chromosome_length=$(bioawk -c fastx '{ print length($seq) }' < "tmp.${chromosome}.fa")
-        rm "tmp.${chromosome}.fa"
+        rm -r "tmp.${chromosome}.fa"
         flank_threshold=$((chromosome_length - flank_size))
         echo -e "$chromosome\t$flank_threshold\t$chromosome_length" > "${chromosome}.${chromosome_length}.telomeres.start.bed"
         bedtools getfasta -fi ${assembly} -bed "${chromosome}.${chromosome_length}.telomeres.start.bed" >"${chromosome}.${chromosome_length}.telomeres.start.bed.fa"
