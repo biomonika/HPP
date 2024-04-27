@@ -25,19 +25,45 @@ conda activate /private/home/mcechova/conda/alignment
 #6. associated censat track of the assembly that will be used for patching
 #7. the name of the chromosome that we want to patch
 
-assembly_to_be_patched="PAN027.fully_phased.maternal.patched.fa"
-assembly_to_be_patched_mashmap="mashmap/PAN027.fully_phased.maternal.patched.mashmap.txt"
-assembly_to_be_patched_censat_track="censat/PAN027.fully_phased.acrocentric.MATERNAL.patched.cenSat.bed"
-assembly_reference="../maternal/duplex.maternal.scaffolds.fa"
-assembly_reference_mashmap="../maternal/mashmap/duplex.maternal.scaffolds.mashmap.txt"
-assembly_reference_censat_track="../maternal/censat/duplex.maternal.scaffolds.cenSat.bed"
+#assembly_to_be_patched="PAN027.fully_phased.maternal.patched.fa"
+#assembly_to_be_patched_mashmap="mashmap/PAN027.fully_phased.maternal.patched.mashmap.txt"
+#assembly_to_be_patched_censat_track="censat/PAN027.fully_phased.acrocentric.MATERNAL.patched.cenSat.bed"
+#assembly_reference="../maternal/duplex.maternal.scaffolds.fa"
+#assembly_reference_mashmap="../maternal/mashmap/duplex.maternal.scaffolds.mashmap.txt"
+#assembly_reference_censat_track="../maternal/censat/duplex.maternal.scaffolds.cenSat.bed"
 
-#assembly_to_be_patched="PAN027.fully_phased.paternal.patched.fa"
-#assembly_to_be_patched_mashmap="mashmap/PAN027.fully_phased.paternal.patched.mashmap.txt"
-#assembly_to_be_patched_censat_track="censat/PAN027.fully_phased.acrocentric.paternal.patched.cenSat.bed"
-#assembly_reference="../maternal/duplex.paternal.scaffolds.fa"
-#assembly_reference_mashmap="../maternal/mashmap/duplex.paternal.scaffolds.mashmap.txt"
-#assembly_reference_censat_track="../maternal/censat/duplex.paternal.scaffolds.cenSat.bed"
+assembly_to_be_patched="PAN027.fully_phased.paternal.patched.fa"
+assembly_to_be_patched_mashmap="mashmap/PAN027.fully_phased.paternal.patched.mashmap.txt"
+assembly_to_be_patched_censat_track="censat/PAN027.fully_phased.acrocentric.paternal.patched.cenSat.bed"
+assembly_reference="../paternal/duplex.paternal.scaffolds.fa"
+assembly_reference_mashmap="../paternal/mashmap/duplex.paternal.scaffolds.mashmap.txt"
+assembly_reference_censat_track="../paternal/censat/duplex.paternal.scaffolds.cenSat.bed"
+
+if [ ! -f "${assembly_to_be_patched}" ]; then
+    echo "${assembly_to_be_patched} file not found. Exiting script."
+    exit 1
+fi
+if [ ! -f "${assembly_to_be_patched_mashmap}" ]; then
+    echo "${assembly_to_be_patched_mashmap} file not found. Exiting script."
+    exit 1
+fi
+if [ ! -f "${assembly_to_be_patched_censat_track}" ]; then
+    echo "${assembly_to_be_patched_censat_track} file not found. Exiting script."
+    exit 1
+fi
+if [ ! -f "${assembly_reference}" ]; then
+    echo "${assembly_reference} file not found. Exiting script."
+    exit 1
+fi
+if [ ! -f "${assembly_reference_mashmap}" ]; then
+    echo "${assembly_reference_mashmap} file not found. Exiting script."
+    exit 1
+fi
+if [ ! -f "${assembly_reference_censat_track}" ]; then
+    echo "${assembly_reference_censat_track} file not found. Exiting script."
+    exit 1
+fi
+
 
 assembly_to_be_patched_name=$(basename -- "$assembly_to_be_patched")
 assembly_to_be_patched_name="${assembly_to_be_patched_name%.*}"
@@ -84,34 +110,34 @@ swap_chromosome() {
 	activeHOR_start_assembly_reference=`cat tmp.${chromosome}.activeHOR_start_assembly_reference.${contig_name_assembly_reference}.txt | head -n 1 | cut -f2`
 
 	#remove unnecessary temporary files
-	#rm -f tmp.${chromosome}.activeHOR_start_assembly_to_be_patched.${contig_name_assembly_to_be_patched}.txt
-	#rm -f tmp.${chromosome}.activeHOR_start_assembly_reference.${contig_name_assembly_reference}.txt
+	rm -f tmp.${chromosome}.activeHOR_start_assembly_to_be_patched.${contig_name_assembly_to_be_patched}.txt
+	rm -f tmp.${chromosome}.activeHOR_start_assembly_reference.${contig_name_assembly_reference}.txt
 
 	#only keep part of the assembly AFTER the first activeHOR
 	region=${contig_name_assembly_to_be_patched}:${activeHOR_start_assembly_to_be_patched}-${contig_length}
 	echo ${region}
-	samtools faidx ${assembly_to_be_patched} ${region} >${assembly_to_be_patched_name}.toKeep.fa
+	samtools faidx ${assembly_to_be_patched} ${region} >${chromosome}.${assembly_to_be_patched_name}.toKeep.fa
 
 
 	#only keep part of the assembly BEFORE the first activeHOR
 	region=${contig_name_assembly_reference}:0-${activeHOR_start_assembly_reference}
 	echo ${region}
-	samtools faidx ${assembly_reference} ${region} >${assembly_reference_name}.toKeep.fa
+	samtools faidx ${assembly_reference} ${region} >${chromosome}.${assembly_reference_name}.toKeep.fa
 
 	#COMBINE BOTH ASSEMBLIES
 	#add header
 	echo ">${chromosome}.${assembly_to_be_patched_name}.acroswap" >tmp.${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa
 	#add sequence
-	cat ${assembly_reference_name}.toKeep.fa ${assembly_to_be_patched_name}.toKeep.fa | seqtk seq | egrep -v "^>" | tr -d '\n' >>tmp.${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa
+	cat ${chromosome}.${assembly_reference_name}.toKeep.fa ${chromosome}.${assembly_to_be_patched_name}.toKeep.fa | seqtk seq | egrep -v "^>" | tr -d '\n' >>tmp.${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa
 
 	#reformat to 60 characters per line in fasta file
 	seqtk seq -l 60 tmp.${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa >${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa
 	rm tmp.${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa
 
 	#remove unnecessary files
-	ls ${assembly_to_be_patched_name}.toKeep.fa
-	ls ${assembly_reference_name}.toKeep.fa
-	rm ${assembly_to_be_patched_name}.toKeep.fa ${assembly_reference_name}.toKeep.fa
+	ls ${chromosome}.${assembly_to_be_patched_name}.toKeep.fa
+	ls ${chromosome}.${assembly_reference_name}.toKeep.fa
+	rm ${chromosome}.${assembly_to_be_patched_name}.toKeep.fa ${chromosome}.${assembly_reference_name}.toKeep.fa
 
 	echo "After acroswap, the resulting patched file is: " ${chromosome}.PATCHED.${assembly_to_be_patched_name}.acroswap.fa.acroswap.fa
 }
