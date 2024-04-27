@@ -46,6 +46,11 @@ if [ ! -e "${mashmap}" ]; then
     exit 1
 fi
 
+if [ $(wc -l < "${bed_file}") -ne 1 ]; then
+    echo "Bed file does not have exactly one line. Exiting script."
+    exit 1
+fi
+
 echo ${bed_file} ${patch_reference} ${haplotype}
 
 chromosome=$(echo "$bed_file" | cut -d'.' -f1)
@@ -64,8 +69,14 @@ contig_to_be_patched=$(echo "$bed_file" | cut -d'.' -f1)
 order=$(echo "$bed_file" | cut -d'.' -f8)
 
 #extract flanks and find out where they belong
-bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >flanks.${bed_file}.${patch_reference_name}
-flank_file=flanks.${bed_file}.${patch_reference_name}
+if [ ! -f "${bed_file}.fa" ]; then
+    echo "Flank file does not exist. Creating now."
+    bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >${bed_file}.fa
+else
+    echo "Flank exists. It will not be extracted again"
+fi
+
+flank_file=${bed_file}."fa"
 
 #BREAKPOINTS TO AN ASSEMBLY AVAILABLE FOR PATCHING
 
