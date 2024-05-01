@@ -29,6 +29,16 @@ reference="chm13v2.0.fa.gz"
 assembly=$1
 scaffolds=$2
 
+if [ ! -f "$assembly" ]; then
+    echo "Assembly file $assembly does not exist. Exiting script."
+    exit 1
+fi
+
+if [ ! -f "$scaffolds" ]; then
+    echo "Scaffolds file $scaffolds does not exist. Exiting script."
+    exit 1
+fi
+
 assembly_name=$(basename -- "$assembly")
 assembly_name="${assembly_name%.*}"
 
