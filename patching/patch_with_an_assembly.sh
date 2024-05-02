@@ -221,14 +221,14 @@ fi
 echo "alignment_padding_left: $alignment_padding_left"
 echo "alignment_padding_right: $alignment_padding_right"
 
-end_coordinate=$((first_contig_length - alignment_padding_left))
-samtools faidx ${assembly} "${first_contig}:0-${end_coordinate}" > ${first_contig}.fasta
-
 start_coordinate=$alignment_padding_right
-samtools faidx ${assembly} "${second_contig}:${start_coordinate}-${second_contig_length}" > ${second_contig}.fasta
+end_coordinate=$((first_contig_length - alignment_padding_left))
 
 echo "Will use: ${first_contig}:0-${end_coordinate}"
 echo "Will use: ${second_contig}:${start_coordinate}-${second_contig_length}"
+
+samtools faidx ${assembly} "${first_contig}:0-${end_coordinate}" > ${first_contig}.fasta
+samtools faidx ${assembly} "${second_contig}:${start_coordinate}-${second_contig_length}" > ${second_contig}.fasta
 
 # Use head to extract the first line of each file
 header1=$(head -n 1 "${first_contig}.fasta")
@@ -240,15 +240,6 @@ echo ">"${chromosome}.$(echo "original_$header1" | tr -d '>')"+"$(echo "${patch_
 cat "${first_contig}.fasta" | grep -v ">" >>${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
 cat "${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa" | grep -v ">" >>${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
 cat "${second_contig}.fasta" | grep -v ">" >>${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
-
-#calculate the length of the patch
-patch_length=$(bioawk -c fastx '{ print length($seq) }' "${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa")
-first_contig_length=$(bioawk -c fastx '{ print length($seq) }' "${first_contig}.fasta")
-second_contig_length=$(bioawk -c fastx '{ print length($seq) }' "${second_contig}.fasta")
-
-echo "The length of the PATCH is: ${patch_length}"
-echo "The first_contig_length: ${first_contig_length}"
-echo "The second_contig_length: ${second_contig_length}"
 
 patch_neighborhood_size=10000
 bed_file_of_patch="${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.bed"
@@ -270,6 +261,14 @@ rm -f ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_nam
 echo -e "\n"
 echo "Merged concatenated fasta for ${chromosome} saved to" ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta
 
+#calculate the length of the patch
+patch_length=$(bioawk -c fastx '{ print length($seq) }' "${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta")
+first_contig_length=$(bioawk -c fastx '{ print length($seq) }' "${first_contig}.fasta")
+second_contig_length=$(bioawk -c fastx '{ print length($seq) }' "${second_contig}.fasta")
+
+echo "The length of the PATCH is: ${patch_length}"
+echo "The first_contig_length: ${first_contig_length}"
+echo "The second_contig_length: ${second_contig_length}"
 
 #remove files that are not needed
 rm -f flanks.${bed_file}.${patch_reference_name}
