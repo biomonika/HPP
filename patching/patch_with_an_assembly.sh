@@ -211,7 +211,7 @@ rm -r original.${first_contig}.fasta original.${second_contig}.fasta
 
 if [ ! -z "$adjustment_for_inner_cut" ]; then
     echo "adjustment_for_inner_cut is defined, and we thus must extend the padding"
-    alignment_padding_left=$((alignment_padding_left - adjustment_for_inner_cut))
+    alignment_padding_left=$((alignment_padding_left + adjustment_for_inner_cut))
     alignment_padding_right=$((alignment_padding_right + adjustment_for_inner_cut))
 
 else
@@ -278,4 +278,3 @@ rm -f "${first_contig}.fasta" "${second_contig}.fasta" "${chromosome}.${order}.p
 echo "Done."
 echo "==========================="
 date
-
