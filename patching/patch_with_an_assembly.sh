@@ -262,9 +262,10 @@ echo -e "\n"
 echo "Merged concatenated fasta for ${chromosome} saved to" ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta
 
 #calculate the length of the patch
-patch_length=$(bioawk -c fastx '{ print length($seq) }' "${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta")
+full_length=$(bioawk -c fastx '{ print length($seq) }' "${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta")
 first_contig_length=$(bioawk -c fastx '{ print length($seq) }' "${first_contig}.fasta")
 second_contig_length=$(bioawk -c fastx '{ print length($seq) }' "${second_contig}.fasta")
+patch_length=$((full_length - first_contig_length - second_contig_length))
 
 echo "The length of the PATCH is: ${patch_length}"
 echo "The first_contig_length: ${first_contig_length}"
