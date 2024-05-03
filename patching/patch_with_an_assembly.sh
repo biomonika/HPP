@@ -25,7 +25,7 @@ assembly_name="${assembly_name%.*}"
 patch_reference=$3
 patch_reference_name=$(basename -- "$patch_reference")
 patch_reference_name="${patch_reference_name%.*}"
-adjustment_for_inner_cut=$4 #if not patching at the ends, but cutting the edges of the broken contigs (zooming out approach)
+adjustment_for_inner_cut=$4 #the use is not recommended, as it cuts from the initial assembly and adds reference assembly sequence
 
 if [ "$#" -lt 3 ]; then
     echo "Error: At least 3 input arguments are required."
@@ -184,6 +184,15 @@ else
     echo "The gap_size is positive."
     #going from bed to gff, increment start coordinate
     gap_start=$((gap_start+1))
+
+    if [ ! -z "$adjustment_for_inner_cut" ]; then
+        echo "adjustment_for_inner_cut is defined, and we must adjust patch region"
+        gap_start=$((gap_start - adjustment_for_inner_cut))
+        gap_end=$((gap_end + adjustment_for_inner_cut))
+    else
+        echo "adjustment_for_inner_cut is not defined, so patch region stays the same"
+    fi
+
     region=${contig_name}:${gap_start}-${gap_end}
     samtools faidx ${patch_reference} ${region} >${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
 fi
