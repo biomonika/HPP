@@ -55,15 +55,15 @@ echo ${bed_file} ${patch_reference} ${haplotype}
 
 chromosome=$(echo "$bed_file" | cut -d'.' -f1)
 
-case "$chromosome" in
-    chr1|chr2|chr3|chr4|chr5|chr6|chr7|chr8|chr9|chr10|chr11|chr12|chr13|chr14|chr15|chr16|chr17|chr18|chr19|chr20|chr21|chr22|chrX|chrY)
-        echo "Input chromosome is valid: $chromosome"
-        ;;
-    *)
-        echo "Input chromosome is not valid. Quitting..."
-        exit 1
-        ;;
-esac
+#case "$chromosome" in
+#    chr1|chr2|chr3|chr4|chr5|chr6|chr7|chr8|chr9|chr10|chr11|chr12|chr13|chr14|chr15|chr16|chr17|chr18|chr19|chr20|chr21|chr22|chrX|chrY)
+#        echo "Input chromosome is valid: $chromosome"
+#        ;;
+#    *)
+#        echo "Input chromosome is not valid. Quitting..."
+#        exit 1
+#        ;;
+#esac
 
 contig_to_be_patched=$(echo "$bed_file" | cut -d'.' -f1)
 order=$(echo "$bed_file" | cut -d'.' -f8)
@@ -157,4 +157,3 @@ rm tmp.${chromosome}.PATCHED.${assembly_name}.telofix.fa
 echo "Done."
 echo "==========================="
 date
-
