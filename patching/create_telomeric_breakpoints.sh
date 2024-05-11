@@ -22,11 +22,19 @@ assembly_name="${assembly_name%.*}"
 #assembly="full.maternal.contigs.fa"
 flank_size=1000000 #set the default flank length to 1Mbp
 
-#store all chromosome names in a bash array
-chromosomes=()
+#store all chromosome names over 1Mb in a bash array
 while read -r chromosome; do
-    # Add the chromosome name to the array
-    chromosomes+=("$chromosome")
+
+    echo $chromosome
+    # Calculate the sequence length for the current chromosome
+    sequence_length=$(bioawk -c fastx -v chr="$chromosome" '$name == chr {len = length($seq)} END {print len}' "$assembly")
+    echo $sequence_length
+
+    # Check if the sequence length is larger than 1 Mb (1000000 base pairs)
+    if ((sequence_length > 1000000)); then
+        # Add the chromosome name to the array
+        chromosomes+=("$chromosome")
+    fi
 done < <(bioawk -c fastx '{print $name}' "$assembly")
 
 seqtk telo ${assembly} >${assembly_name}.telomeres.txt
@@ -95,4 +103,3 @@ rm -r ${assembly_name}.telomeres.end.txt
 
 echo "Done."
 date
-
