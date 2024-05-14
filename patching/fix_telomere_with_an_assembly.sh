@@ -54,16 +54,17 @@ fi
 echo ${bed_file} ${patch_reference} ${haplotype}
 
 chromosome=$(echo "$bed_file" | cut -d'.' -f1)
+echo "chromosome: contig_name_assembly"
 
-#case "$chromosome" in
-#    chr1|chr2|chr3|chr4|chr5|chr6|chr7|chr8|chr9|chr10|chr11|chr12|chr13|chr14|chr15|chr16|chr17|chr18|chr19|chr20|chr21|chr22|chrX|chrY)
-#        echo "Input chromosome is valid: $chromosome"
-#        ;;
-#    *)
-#        echo "Input chromosome is not valid. Quitting..."
-#        exit 1
-#        ;;
-#esac
+case "$chromosome" in
+    chr1|chr2|chr3|chr4|chr5|chr6|chr7|chr8|chr9|chr10|chr11|chr12|chr13|chr14|chr15|chr16|chr17|chr18|chr19|chr20|chr21|chr22|chrX|chrY)
+        echo "Input chromosome is valid: $chromosome"
+        ;;
+    *)
+        echo "Input chromosome is not valid. Quitting..."
+        exit 1
+        ;;
+esac
 
 contig_to_be_patched=$(echo "$bed_file" | cut -d'.' -f1)
 order=$(echo "$bed_file" | cut -d'.' -f8)
@@ -77,6 +78,8 @@ else
 fi
 
 flank_file=${bed_file}."fa"
+alignment_padding_left=0 #if left flank does not align fully, this is how much of a padding there is
+alignment_padding_right=0 #if right flank does not align fully, this is how much of a padding there is
 
 #BREAKPOINTS TO AN ASSEMBLY AVAILABLE FOR PATCHING
 
@@ -86,9 +89,27 @@ else
     echo "Wfmash does not exist. Creating now."
     wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
     wait
-    cat tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 | sort -k1,1n >${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    cat tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 >${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
     #remove temporary wfmash file
-    #rm -f tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    rm -f tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+
+    mashmap_file="${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt"
+
+    flank_size=$(awk 'NR==1 {print $2}' "$mashmap_file")
+    flank_start=$(awk 'NR==1 {print $3}' "$mashmap_file")
+    flank_end=$(awk 'NR==1 {print $4}' "$mashmap_file")
+
+    #if the flank does not align fully, the sequence should be truncated by alignment_padding_left
+    #this is only useful for telomeres at starts
+    #alignment_padding_left tells you how much bigger the patch should be
+    alignment_padding_left=$flank_start
+    #if the flank does not align fully, the sequence should be truncated by alignment_padding_right
+    #this is only useful for telomeres at ends
+    #alignment_padding_right tells you how much bigger the patch should be
+    alignment_padding_right=$((flank_size - flank_end)) 
+
+    echo "alignment_padding_left: $alignment_padding_left"
+    echo "alignment_padding_right: $alignment_padding_right"
 fi
 
 if [ ! -s "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
@@ -114,10 +135,14 @@ distance_from_end=$((total_length - first_coordinate))
 echo "distance_from_beginning: $distance_from_beginning"
 echo "distance_from_end: $distance_from_end"
 
-if [ "$distance_from_beginning" -lt "$distance_from_end" ]; then
+if grep -qE 'start' "$bed_file"; then
     echo "we will be fixing the BEGINNING of the chromosome"
+    echo "Adjust for padding."
+    first_coordinate=$((first_coordinate - alignment_padding_left))
+
     region=${contig_name_patch_reference}:0-${first_coordinate}
-    echo ${region}
+    echo ${patch_reference} ${region}
+    echo ${assembly} ${contig_name_assembly}
     samtools faidx ${patch_reference} ${region} >${patch_reference_name}.beginning.fa
     samtools faidx ${assembly} ${contig_name_assembly} >${contig_name_assembly}.unpatched.fa
     
@@ -132,8 +157,10 @@ if [ "$distance_from_beginning" -lt "$distance_from_end" ]; then
 
 else
     echo "we will be fixing the END of the chromosome"
+    second_coordinate=$((second_coordinate - alignment_padding_right))
     region=${contig_name_patch_reference}:${second_coordinate}-${total_length}
-    echo ${region}
+    echo ${patch_reference} ${region}
+    echo ${assembly} ${contig_name_assembly}
     samtools faidx ${patch_reference} ${region} >${patch_reference_name}.ending.fa
     samtools faidx ${assembly} ${contig_name_assembly} >${contig_name_assembly}.unpatched.fa
 
