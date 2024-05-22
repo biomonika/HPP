@@ -135,7 +135,7 @@ distance_from_end=$((total_length - first_coordinate))
 echo "distance_from_beginning: $distance_from_beginning"
 echo "distance_from_end: $distance_from_end"
 
-if grep -qE 'start' "$bed_file"; then
+if [[ $bed_file == *"start"* ]]; then
     echo "we will be fixing the BEGINNING of the chromosome"
     echo "Adjust for padding."
     first_coordinate=$((first_coordinate - alignment_padding_left))
