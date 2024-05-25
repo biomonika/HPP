@@ -25,7 +25,6 @@ assembly_name="${assembly_name%.*}"
 patch_reference=$3
 patch_reference_name=$(basename -- "$patch_reference")
 patch_reference_name="${patch_reference_name%.*}"
-mashmap=$4
 
 #Check if input files exist
 
@@ -39,10 +38,6 @@ if [ ! -e "${assembly}" ]; then
 fi
 if [ ! -e "${patch_reference}" ]; then
     echo "Reference that should be used for patching does not exist. Quitting the script."
-    exit 1
-fi
-if [ ! -e "${mashmap}" ]; then
-    echo "mashmap file does not exist. Quitting the script."
     exit 1
 fi
 
@@ -67,12 +62,15 @@ case "$chromosome" in
 esac
 
 contig_to_be_patched=$(echo "$bed_file" | cut -d'.' -f1)
-order=$(echo "$bed_file" | cut -d'.' -f8)
+order=$(echo "$bed_file" | grep -oP 'order\d+')
 
 #extract flanks and find out where they belong
 if [ ! -f "${bed_file}.fa" ]; then
     echo "Flank file does not exist. Creating now."
+    contig_name_assembly=$(awk 'NR==1 {print $1}' "$bed_file")
     bedtools getfasta -fi ${assembly} -bed ${bed_file} -name >${bed_file}.fa
+    #rename the header to only contain the contig name
+    sed -i "s/^>.*/>$contig_name_assembly/" "${bed_file}.fa"
 else
     echo "Flank exists. It will not be extracted again"
 fi
@@ -80,6 +78,7 @@ fi
 flank_file=${bed_file}."fa"
 alignment_padding_left=0 #if left flank does not align fully, this is how much of a padding there is
 alignment_padding_right=0 #if right flank does not align fully, this is how much of a padding there is
+contig_name_assembly=""
 
 #BREAKPOINTS TO AN ASSEMBLY AVAILABLE FOR PATCHING
 
@@ -87,17 +86,18 @@ if [ -e "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
     echo "Wfmash file exists and won't be re-written."
 else
     echo "Wfmash does not exist. Creating now."
-    wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    wfmash --threads ${threadCount} --segment-length=100 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
     wait
     cat tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 >${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
     #remove temporary wfmash file
     rm -f tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
 
-    mashmap_file="${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt"
+    wfmash_file="${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt"
 
-    flank_size=$(awk 'NR==1 {print $2}' "$mashmap_file")
-    flank_start=$(awk 'NR==1 {print $3}' "$mashmap_file")
-    flank_end=$(awk 'NR==1 {print $4}' "$mashmap_file")
+    contig_name_assembly=$(awk 'NR==1 {print $1}' "$wfmash_file")
+    flank_size=$(awk 'NR==1 {print $2}' "$wfmash_file")
+    flank_start=$(awk 'NR==1 {print $3}' "$wfmash_file")
+    flank_end=$(awk 'NR==1 {print $4}' "$wfmash_file")
 
     #if the flank does not align fully, the sequence should be truncated by alignment_padding_left
     #this is only useful for telomeres at starts
@@ -125,9 +125,11 @@ file_name=("${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt")
 
 first_coordinate=$(awk 'NR==1 {print $8}' "${file_name}")
 second_coordinate=$(awk 'NR==1 {print $9}' "${file_name}")
+#going from bed to gff, increment second_coordinate
+second_coordinate=$((second_coordinate+1))
+
 total_length=$(awk 'NR==1 {print $7}' "${file_name}")
 contig_name_patch_reference=$(awk 'NR==1 {print $6}' "${file_name}")
-contig_name_assembly=`cat ${mashmap} | egrep "\b${chromosome}\b" | cut -d' ' -f1`
 
 distance_from_beginning=${first_coordinate}
 distance_from_end=$((total_length - first_coordinate))
