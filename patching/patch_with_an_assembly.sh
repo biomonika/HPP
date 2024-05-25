@@ -61,7 +61,7 @@ if [ -e "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
     echo "Wfmash file exists and won't be re-written."
 else
     echo "Wfmash does not exist. Creating now."
-    wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp1.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    wfmash --threads ${threadCount} --segment-length=100 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp1.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
 
     if [ ! -s "tmp1.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
         echo "Wfmash file is empty. Flanks were not mapped. Exiting script."
@@ -192,9 +192,6 @@ else
     echo "The gap_size is positive."
     #going from bed to gff, increment start coordinate
     gap_start=$((gap_start+1))
-
-    gap_start=$((gap_start - adjustment_for_inner_cut))
-    gap_end=$((gap_end + adjustment_for_inner_cut))
 
     #region defines the coordinates of the patch
     region=${contig_name}:${gap_start}-${gap_end}
