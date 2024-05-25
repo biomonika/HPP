@@ -25,7 +25,6 @@ assembly_name="${assembly_name%.*}"
 patch_reference=$3
 patch_reference_name=$(basename -- "$patch_reference")
 patch_reference_name="${patch_reference_name%.*}"
-adjustment_for_inner_cut=$4 #the use is not recommended, as it cuts from the initial assembly and adds reference assembly sequence
 
 if [ "$#" -lt 3 ]; then
     echo "Error: At least 3 input arguments are required."
@@ -45,7 +44,7 @@ case "$chromosome" in
         ;;
 esac
 
-order=$(echo "$bed_file" | cut -d'.' -f8)
+order=$(echo "$bed_file" | grep -oP 'order\d+')
 
 #extract flanks and find out where they belong
 if [ ! -f "${bed_file}.fa" ]; then
@@ -89,7 +88,7 @@ wait
 file_name="${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt"
 
 max_avg=0
-max_file=""
+wfmash_file=""
 
 
 echo "Analyzing mashmap file with flanks mapped to the reference used for patching. "
@@ -109,7 +108,7 @@ if [ "$num_lines" -eq 2 ]; then
         echo "test_gap $test_gap"
         echo "--------"
 
-        max_file=$file_name
+        wfmash_file=$file_name
     else
         echo "Skipping $file_name as the 6th column is not identical (different contig names)."
         echo "The breakpoint is not resolved in the assembly used for patching."
@@ -121,8 +120,8 @@ fi
 
 echo ""
 
-if [ -n "$max_file" ]; then
-    echo "The file with the highest average in the 10th column and identical 6th column is: $max_file"
+if [ -n "$wfmash_file" ]; then
+    echo "The file with the highest average in the 10th column and identical 6th column is: $wfmash_file"
 else
     echo "No valid file found with identical 6th column."
     rm -f flanks.${bed_file}.${patch_reference_name}
@@ -137,6 +136,8 @@ gap_end=""
 alignment_padding_left=0 #if left flank does not align fully, this is how much of a padding there is
 alignment_padding_right=0 #if right flank does not align fully, this is how much of a padding there is
 contig_name=""
+
+#this code parses wfmash file to see if flanks align fully, and adjusts padding accordingly
 extract_variables() {
     file_name=$1
     
@@ -146,12 +147,18 @@ extract_variables() {
     right_flank_start=$(awk 'NR==2 {print $3}' "$file_name")
 
     #if the left flank does not align fully, the first sequence should be truncated by alignment_padding_left
-    alignment_padding_left=$((flank_size - left_flank_end)) 
+    alignment_padding_left=$((flank_size - left_flank_end)) #should be positive number if defined
     #if the right flank does not align fully, the second sequence should be truncated by alignment_padding_right
     alignment_padding_right=$right_flank_start
 
     echo "alignment_padding_left: $alignment_padding_left"
     echo "alignment_padding_right: $alignment_padding_right"
+
+    #Note that alignment_padding_left and alignment_padding_right need to be positive numbers or 0
+    if [[ "$alignment_padding_left" -lt 0 || "$alignment_padding_right" -lt 0 ]]; then
+        echo "Error: alignment_padding_left and alignment_padding_right must be positive numbers."
+        exit 1
+    fi
 
     # Extract 9th column from the first row
     gap_start=$(awk 'NR==1 {print $9}' "$file_name")
@@ -167,8 +174,9 @@ extract_variables() {
     echo "GAP/BREAKPOINT end (8th column from the second row): $gap_end"
 }
 
+
 # Extract coordinates from the reference used for patching
-extract_variables "$max_file"
+extract_variables "$wfmash_file"
 
 gap_size=$((gap_end - gap_start))
 echo "Gap size is $gap_size"
@@ -185,14 +193,10 @@ else
     #going from bed to gff, increment start coordinate
     gap_start=$((gap_start+1))
 
-    if [ ! -z "$adjustment_for_inner_cut" ]; then
-        echo "adjustment_for_inner_cut is defined, and we must adjust patch region"
-        gap_start=$((gap_start - adjustment_for_inner_cut))
-        gap_end=$((gap_end + adjustment_for_inner_cut))
-    else
-        echo "adjustment_for_inner_cut is not defined, so patch region stays the same"
-    fi
+    gap_start=$((gap_start - adjustment_for_inner_cut))
+    gap_end=$((gap_end + adjustment_for_inner_cut))
 
+    #region defines the coordinates of the patch
     region=${contig_name}:${gap_start}-${gap_end}
     samtools faidx ${patch_reference} ${region} >${chromosome}.${order}.patch.${patch_reference_name}.${region}.fa
 fi
@@ -218,22 +222,54 @@ echo "second_contig_length: $second_contig_length"
 
 rm -r original.${first_contig}.fasta original.${second_contig}.fasta
 
-if [ ! -z "$adjustment_for_inner_cut" ]; then
-    echo "adjustment_for_inner_cut is defined, and we thus must extend the padding"
-    alignment_padding_left=$((alignment_padding_left + adjustment_for_inner_cut))
-    alignment_padding_right=$((alignment_padding_right + adjustment_for_inner_cut))
+#this code adjusts padding based on the bed file; if we walked-out/zoomed-out due to repeats, 
+#then the flanks are not at the edges of the existing sequences
+#if that's the case, we need to increase the padding, so that we're not including the same sequence twice
+#if the sequence is contained in the patch, it needs to be ignored from the original sequences
+zoom_out_parameters() { 
+    file_name=$1
+    
+    #if not zoomed out due to censat, bed_left_flank_end will be the end of the first sequence 
+    #if not zoomed out due to censat, bed_right_flank_start will be 0 
+    bed_left_flank_end=$(awk 'NR==1 {print $3}' "$file_name")
+    bed_right_flank_start=$(awk 'NR==2 {print $2}' "$file_name")
 
-else
-    echo "adjustment_for_inner_cut is not defined, so we only need to adjust flanks based on mapping results"
-fi
+    if [[ "$bed_left_flank_end" == "$first_contig_length" ]]; then
+        echo "The left flank coincides with the end of the first contig, no adjustment in padding needed."
+    else
+        left_zoomed_out_distance=$((first_contig_length - bed_left_flank_end))
+        echo "The left zoomed out distance from the end of the first contig: $left_zoomed_out_distance"
+        alignment_padding_left=$((alignment_padding_left + left_zoomed_out_distance))
+    fi
+
+    if [[ "$bed_right_flank_start" -eq 0 ]]; then
+        echo "The right flank coincides with the start of the second contig, no adjustment in padding needed."
+    else
+        right_zoomed_out_distance=$bed_right_flank_start
+        echo "The left zoomed out distance from the end of the first contig: $right_zoomed_out_distance"
+        alignment_padding_right=$((alignment_padding_right + right_zoomed_out_distance))
+    fi
+
+}
+
+# Extract coordinates from the reference used for patching
+extract_variables "$wfmash_file"
+zoom_out_parameters "$bed_file"
+
 
 echo "alignment_padding_left: $alignment_padding_left"
 echo "alignment_padding_right: $alignment_padding_right"
 
-start_coordinate=$alignment_padding_right
-end_coordinate=$((first_contig_length - alignment_padding_left))
+#Note that alignment_padding_left and alignment_padding_right need to be positive numbers or 0
+if [[ "$alignment_padding_left" -lt 0 || "$alignment_padding_right" -lt 0 ]]; then
+    echo "Error: alignment_padding_left and alignment_padding_right must be positive numbers."
+    exit 1
+fi
 
+end_coordinate=$((first_contig_length - alignment_padding_left))
 echo "Will use: ${first_contig}:0-${end_coordinate}"
+
+start_coordinate=$alignment_padding_right
 echo "Will use: ${second_contig}:${start_coordinate}-${second_contig_length}"
 
 samtools faidx ${assembly} "${first_contig}:0-${end_coordinate}" > ${first_contig}.fasta
@@ -253,16 +289,6 @@ cat "${second_contig}.fasta" | grep -v ">" >>${chromosome}.${order}.PATCHED.${as
 patch_neighborhood_size=10000
 bed_file_of_patch="${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.bed"
 
-#when checking our patch in IGV, what coordinates should we use for each junction? 
-patch_neighborhood_J1_start=$((first_contig_length - patch_neighborhood_size))
-patch_neighborhood_J1_end=$((first_contig_length + patch_neighborhood_size))
-patch_neighborhood_J2_start=$((first_contig_length + patch_length - patch_neighborhood_size))
-patch_neighborhood_J2_end=$((first_contig_length + patch_length + patch_neighborhood_size))
-
-#there will be two junctions per each successfull patch
-echo -e "${chromosome}\t${patch_neighborhood_J1_start}\t${patch_neighborhood_J1_end}\tJ1;gap_size:${gap_size};patch_length:${patch_length}" >${bed_file_of_patch}
-echo -e "${chromosome}\t${patch_neighborhood_J2_start}\t${patch_neighborhood_J2_end}\tJ2;gap_size:${gap_size};patch_length:${patch_length}" >>${bed_file_of_patch}
-
 #reformat the final patched fasta chromosome
 seqtk seq -L 0 ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp >${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta
 rm -f ${chromosome}.${order}.PATCHED.${assembly_name}.with.${patch_reference_name}.fasta.tmp
@@ -277,8 +303,20 @@ second_contig_length=$(bioawk -c fastx '{ print length($seq) }' "${second_contig
 patch_length=$((full_length - first_contig_length - second_contig_length))
 
 echo "The length of the PATCH is: ${patch_length}"
-echo "The first_contig_length: ${first_contig_length}"
-echo "The second_contig_length: ${second_contig_length}"
+
+#when checking our patch in IGV, what coordinates should we use for each junction? 
+patch_neighborhood_J1_start=$((end_coordinate - patch_neighborhood_size))
+patch_neighborhood_J1_end=$end_coordinate
+patch_start=$end_coordinate
+patch_end=$((end_coordinate + patch_length))
+patch_neighborhood_J2_start=$((end_coordinate + patch_length))
+patch_neighborhood_J2_end=$((end_coordinate + patch_length + patch_neighborhood_size))
+
+#there will be two junctions per each successfull patch
+echo -e "${chromosome}\t${patch_neighborhood_J1_start}\t${patch_neighborhood_J1_end}\tJ1" >${bed_file_of_patch}
+echo -e "${chromosome}\t${patch_neighborhood_J2_start}\t${patch_neighborhood_J2_end}\tJ2" >>${bed_file_of_patch}
+echo -e "${chromosome}\t${patch_start}\t${patch_end}\tgap_size:${gap_size};patch_length:${patch_length}" >>${bed_file_of_patch}
+
 
 #remove files that are not needed
 rm -f flanks.${bed_file}.${patch_reference_name}
