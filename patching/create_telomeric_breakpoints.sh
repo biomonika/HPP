@@ -79,8 +79,8 @@ for chromosome in "${chromosomes[@]}"; do
     else
         echo "Telomere NOT found in ${assembly_name}.telomeres.start.txt"
         echo "Bed file will be created."
-        echo -e "$chromosome\t0\t$flank_size" > "${chromosome}.${assembly_name}.telomeres.start.bed"
-        bedtools getfasta -fi ${assembly} -bed "${chromosome}.${assembly_name}.telomeres.start.bed" >"${chromosome}.${assembly_name}.telomeres.start.bed.fa"
+        echo -e "$chromosome\t0\t$flank_size" > "${chromosome}.${assembly_name}.telomeres.order1.start.bed"
+        bedtools getfasta -fi ${assembly} -bed "${chromosome}.${assembly_name}.telomeres.order1.start.bed" >"${chromosome}.${assembly_name}.telomeres.order1.start.bed.fa"
     fi
 
     if grep -q "$chromosome" "${assembly_name}.telomeres.end.txt"; then
@@ -92,8 +92,8 @@ for chromosome in "${chromosomes[@]}"; do
         chromosome_length=$(bioawk -c fastx '{ print length($seq) }' < "tmp.${chromosome}.fa")
         rm -r "tmp.${chromosome}.fa"
         flank_threshold=$((chromosome_length - flank_size))
-        echo -e "$chromosome\t$flank_threshold\t$chromosome_length" > "${chromosome}.${assembly_name}.telomeres.end.bed"
-        bedtools getfasta -fi ${assembly} -bed "${chromosome}.${assembly_name}.telomeres.end.bed" >"${chromosome}.${assembly_name}.telomeres.end.bed.fa"
+        echo -e "$chromosome\t$flank_threshold\t$chromosome_length" > "${chromosome}.${assembly_name}.telomeres.order1.end.bed"
+        bedtools getfasta -fi ${assembly} -bed "${chromosome}.${assembly_name}.telomeres.order1.end.bed" >"${chromosome}.${assembly_name}.telomeres.order1.end.bed.fa"
     fi
 done
 
