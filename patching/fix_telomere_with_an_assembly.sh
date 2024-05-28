@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=fix_telomere_with_an_assembly.20240403
+#SBATCH --job-name=fix_telomere_with_an_assembly.20240528
 #SBATCH --partition=medium
 #SBATCH --mail-user=mcechova@ucsc.edu
 #SBATCH --nodes=1
@@ -124,30 +124,41 @@ file_name=("${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt")
 
 #get the missing sequence containing telomere
 
-first_coordinate=$(awk 'NR==1 {print $8}' "${file_name}")
-second_coordinate=$(awk 'NR==1 {print $9}' "${file_name}")
+first_coordinate=$(awk 'NR==1 {print $8}' "${file_name}") #where flank maps in reference
+second_coordinate=$(awk 'NR==1 {print $9}' "${file_name}") #where flank maps in reference
 #going from bed to gff, increment second_coordinate
 second_coordinate=$((second_coordinate+1))
 
 total_length=$(awk 'NR==1 {print $7}' "${file_name}")
 contig_name_patch_reference=$(awk 'NR==1 {print $6}' "${file_name}")
 
-distance_from_beginning=${first_coordinate}
-distance_from_end=$((total_length - first_coordinate))
+distance_from_beginning=${first_coordinate} #distance measured using flank mapped to the reference
+distance_from_end=$((total_length - first_coordinate)) #distance measured using flank mapped to the reference
 
 echo "distance_from_beginning: $distance_from_beginning"
 echo "distance_from_end: $distance_from_end"
 
 if [[ $bed_file == *"start"* ]]; then
     echo "we will be fixing the BEGINNING of the chromosome"
+    
+    #flank_padding_left describes the position of the flank in relation to the assembly
+    #most commonly this would be 0, meaning flank is at the edge of the assembly
+    flank_padding_left=$(awk 'NR==1 {print $2}' "${bed_file}")
+    echo "flank_padding_left: $flank_padding_left"
+
     echo "Adjust for padding."
     first_coordinate=$((first_coordinate - alignment_padding_left))
 
+    #region is extracted from the reference that contains telomeric sequence
     region=${contig_name_patch_reference}:0-${first_coordinate}
     echo ${patch_reference} ${region}
     echo ${assembly} ${contig_name_assembly}
     samtools faidx ${patch_reference} ${region} >${patch_reference_name}.beginning.fa
-    samtools faidx ${assembly} ${contig_name_assembly} >${contig_name_assembly}.unpatched.fa
+
+    #unpatched is the sequence from the assembly that will remain unchanged
+    #if flank is not at the edge of the assembly, then we need to truncate the sequence from the assembly
+    #it will be truncated by the distance between the flank and the actual assembly edge
+    samtools faidx ${assembly} ${contig_name_assembly}:${flank_padding_left}- >${contig_name_assembly}.unpatched.fa
     
     #COMBINE BOTH ASSEMBLIES
     #add header
@@ -160,12 +171,29 @@ if [[ $bed_file == *"start"* ]]; then
 
 else
     echo "we will be fixing the END of the chromosome"
+
+    #calculate the length of the assembly contig
+    samtools faidx ${assembly} ${contig_name_assembly} >tmp.${contig_name_assembly}.unpatched.fa
+    assembly_contig_length=$(bioawk -c fastx '{ print length($seq) }' < "tmp.${contig_name_assembly}.unpatched.fa")
+    
+    #flank_padding_right describes the position of the flank in relation to the assembly
+    #most commonly this would be the length of the assembly sequence, meaning flank is at the edge of the assembly
+    flank_coordinate_right=$(awk 'NR==1 {print $3}' "${bed_file}")
+
+    flank_padding_right=$((assembly_contig_length - flank_coordinate_right))
+    echo "flank_padding_right: $flank_padding_right"
+
     second_coordinate=$((second_coordinate - alignment_padding_right))
     region=${contig_name_patch_reference}:${second_coordinate}-${total_length}
     echo ${patch_reference} ${region}
     echo ${assembly} ${contig_name_assembly}
     samtools faidx ${patch_reference} ${region} >${patch_reference_name}.ending.fa
-    samtools faidx ${assembly} ${contig_name_assembly} >${contig_name_assembly}.unpatched.fa
+
+    #unpatched is the sequence from the assembly that will remain unchanged
+    #if flank is not at the edge of the assembly, then we need to truncate the sequence from the assembly
+    #it will be truncated by the distance between the flank and the actual assembly edge
+    samtools faidx ${assembly} ${contig_name_assembly}:0-${flank_coordinate_right} >${contig_name_assembly}.unpatched.fa
+    rm tmp.${contig_name_assembly}.unpatched.fa
 
     #COMBINE BOTH ASSEMBLIES
     #add header
