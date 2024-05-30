@@ -9,7 +9,7 @@
 #SBATCH --output=fix_telomere_with_an_assembly.20240403.%j.log
 
 set -e
-set -x
+#set -x
 
 pwd; hostname; date
 
@@ -88,30 +88,30 @@ if [ -e "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
     echo "Wfmash file exists and won't be re-written."
 else
     echo "Wfmash does not exist. Creating now."
-    wfmash --threads ${threadCount} --segment-length=100 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
+    wfmash --threads ${threadCount} --segment-length=1000 --map-pct-id=${minIdentity} --no-split ${patch_reference} ${flank_file} >tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
     wait
     cat tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt | sed s'/\t/ /g' | cut -d' ' -f1-10 >${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
     #remove temporary wfmash file
     rm -f tmp.${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt
-
-    wfmash_file="${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt"
-
-    flank_size=$(awk 'NR==1 {print $2}' "$wfmash_file")
-    flank_start=$(awk 'NR==1 {print $3}' "$wfmash_file")
-    flank_end=$(awk 'NR==1 {print $4}' "$wfmash_file")
-
-    #if the flank does not align fully, the sequence should be truncated by alignment_padding_left
-    #this is only useful for telomeres at starts
-    #alignment_padding_left tells you how much bigger the patch should be
-    alignment_padding_left=$flank_start
-    #if the flank does not align fully, the sequence should be truncated by alignment_padding_right
-    #this is only useful for telomeres at ends
-    #alignment_padding_right tells you how much bigger the patch should be
-    alignment_padding_right=$((flank_size - flank_end)) 
-
-    echo "alignment_padding_left: $alignment_padding_left"
-    echo "alignment_padding_right: $alignment_padding_right"
 fi
+
+wfmash_file="${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt"
+
+flank_size=$(awk 'NR==1 {print $2}' "$wfmash_file")
+flank_start=$(awk 'NR==1 {print $3}' "$wfmash_file")
+flank_end=$(awk 'NR==1 {print $4}' "$wfmash_file")
+
+#if the flank does not align fully, the sequence should be truncated by alignment_padding_left
+#this is only useful for telomeres at starts
+#alignment_padding_left tells you how much bigger the patch should be
+alignment_padding_left=$flank_start
+#if the flank does not align fully, the sequence should be truncated by alignment_padding_right
+#this is only useful for telomeres at ends
+#alignment_padding_right tells you how much bigger the patch should be
+alignment_padding_right=$((flank_size - flank_end)) 
+
+echo "alignment_padding_left: $alignment_padding_left"
+echo "alignment_padding_right: $alignment_padding_right"
 
 if [ ! -s "${bed_file}.${assembly_name}.TO.${patch_reference_name}.txt" ]; then
     echo "Wfmash file is empty. Flanks were not mapped. Exiting script."
@@ -133,7 +133,7 @@ total_length=$(awk 'NR==1 {print $7}' "${file_name}")
 contig_name_patch_reference=$(awk 'NR==1 {print $6}' "${file_name}")
 
 distance_from_beginning=${first_coordinate} #distance measured using flank mapped to the reference
-distance_from_end=$((total_length - first_coordinate)) #distance measured using flank mapped to the reference
+distance_from_end=$((total_length - second_coordinate)) #distance measured using flank mapped to the reference
 
 echo "distance_from_beginning: $distance_from_beginning"
 echo "distance_from_end: $distance_from_end"
@@ -143,14 +143,17 @@ if [[ $bed_file == *"start"* ]]; then
     
     #flank_padding_left describes the position of the flank in relation to the assembly
     #most commonly this would be 0, meaning flank is at the edge of the assembly
-    flank_padding_left=$(awk 'NR==1 {print $2}' "${bed_file}")
-    echo "flank_padding_left: $flank_padding_left"
+    flank_coordinate_left=$(awk 'NR==1 {print $2}' "${bed_file}")
+    echo "flank_coordinate_left: $flank_coordinate_left"
 
     echo "Adjust for padding."
-    first_coordinate=$((first_coordinate - alignment_padding_left))
+    #we need to skip the distance to the flank (derived from the bed file), and also the part of the flank that is not aligned
+    adjusted_flank_coordinate_left=$((flank_coordinate_left + alignment_padding_left))
+    echo "adjusted_flank_coordinate_left: $adjusted_flank_coordinate_left"
 
     #region is extracted from the reference that contains telomeric sequence
     region=${contig_name_patch_reference}:0-${first_coordinate}
+    echo "region: $region"
     echo ${patch_reference} ${region}
     echo ${assembly} ${contig_name_assembly}
     samtools faidx ${patch_reference} ${region} >${patch_reference_name}.beginning.fa
@@ -158,7 +161,7 @@ if [[ $bed_file == *"start"* ]]; then
     #unpatched is the sequence from the assembly that will remain unchanged
     #if flank is not at the edge of the assembly, then we need to truncate the sequence from the assembly
     #it will be truncated by the distance between the flank and the actual assembly edge
-    samtools faidx ${assembly} ${contig_name_assembly}:${flank_padding_left}- >${contig_name_assembly}.unpatched.fa
+    samtools faidx ${assembly} ${contig_name_assembly}:${adjusted_flank_coordinate_left}- >${contig_name_assembly}.unpatched.fa
     
     #COMBINE BOTH ASSEMBLIES
     #add header
@@ -179,6 +182,7 @@ else
     #flank_padding_right describes the position of the flank in relation to the assembly
     #most commonly this would be the length of the assembly sequence, meaning flank is at the edge of the assembly
     flank_coordinate_right=$(awk 'NR==1 {print $3}' "${bed_file}")
+    adjusted_flank_coordinate_right=$((flank_coordinate_right - alignment_padding_right)) #adjust if the flank doesn't align fully
 
     flank_padding_right=$((assembly_contig_length - flank_coordinate_right))
     echo "flank_padding_right: $flank_padding_right"
@@ -192,7 +196,7 @@ else
     #unpatched is the sequence from the assembly that will remain unchanged
     #if flank is not at the edge of the assembly, then we need to truncate the sequence from the assembly
     #it will be truncated by the distance between the flank and the actual assembly edge
-    samtools faidx ${assembly} ${contig_name_assembly}:0-${flank_coordinate_right} >${contig_name_assembly}.unpatched.fa
+    samtools faidx ${assembly} ${contig_name_assembly}:0-${adjusted_flank_coordinate_right} >${contig_name_assembly}.unpatched.fa
     rm tmp.${contig_name_assembly}.unpatched.fa
 
     #COMBINE BOTH ASSEMBLIES
