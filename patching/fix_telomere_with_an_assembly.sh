@@ -187,8 +187,7 @@ else
     flank_padding_right=$((assembly_contig_length - flank_coordinate_right))
     echo "flank_padding_right: $flank_padding_right"
 
-    second_coordinate=$((second_coordinate - alignment_padding_right))
-    region=${contig_name_patch_reference}:${second_coordinate}-${total_length}
+    region=${contig_name_patch_reference}:${second_coordinate}-
     echo ${patch_reference} ${region}
     echo ${assembly} ${contig_name_assembly}
     samtools faidx ${patch_reference} ${region} >${patch_reference_name}.ending.fa
