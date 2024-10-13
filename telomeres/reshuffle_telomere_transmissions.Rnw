@@ -1,0 +1,70 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+<<reshuffle telomeres as a test>>=
+setwd("/Users/mcechova/Downloads")
+
+# Load necessary library
+library(dplyr)
+
+# Read the dataframe from the file
+df <- read.table("traced_telomeres.minimap2.pedigree.20240823.tsv", sep = "\t", header = TRUE)
+
+# Function to swap haplotypes
+swap_haplotypes <- function(column) {
+  column <- gsub("haplotype1", "temp_haplotype", column)
+  column <- gsub("haplotype2", "haplotype1", column)
+  column <- gsub("temp_haplotype", "haplotype2", column)
+  return(column)
+}
+
+# Function to reshuffle chromosomes, so that we get random order of the rows
+reshuffled_chromosomes <- function(column) {
+  column <- sample(column)
+  return(column)
+}
+
+# Function to reshuffle haplotypes
+reshuffle_haplotypes <- function(column) {
+  # Apply the reshuffling row by row
+  sapply(column, function(x) {
+    # Randomly pick between haplotype1 and haplotype2
+    haplotype_choice <- sample(c("haplotype1", "haplotype2"), 1)
+    # Replace haplotype1 or haplotype2 in the string with the randomly chosen haplotype
+    if (grepl("haplotype1", x)) {
+      return(gsub("haplotype1", haplotype_choice, x))
+    } else {
+      return(gsub("haplotype2", haplotype_choice, x))
+    }
+  })
+}
+
+df_swapped<-df
+# Apply the swap function to the first and third columns
+df_swapped$Generation3 <- swap_haplotypes(df$Generation3)
+df_swapped$Generation1 <- swap_haplotypes(df$Generation1)
+
+df_reshuffled_haplotypes<-df
+# Apply the reshuffle function to the first and third columns
+df_reshuffled_haplotypes$Generation3 <- reshuffle_haplotypes(df$Generation3)
+df_reshuffled_haplotypes$Generation1 <- reshuffle_haplotypes(df$Generation1)
+
+df_reshuffled_chromosomes<-df
+# Apply the reshuffle function to the first and third columns
+df_reshuffled_chromosomes$Generation3 <- reshuffled_chromosomes(df$Generation3)
+df_reshuffled_chromosomes$Generation1 <- reshuffled_chromosomes(df$Generation1)
+
+# Write the dataframe to a tab-delimited file with headers
+write.table(df_swapped, "swapped_telomeres.minimap2.pedigree.20240903.tsv", sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+write.table(df_reshuffled_haplotypes, "reshuffled_telomeres.minimap2.pedigree.20240903.tsv", sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+write.table(df_reshuffled_chromosomes, "reshuffled_chromosomes.minimap2.pedigree.20241013.tsv", sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+
+
+
+@
+
+
+
+\end{document}

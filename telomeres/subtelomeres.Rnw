@@ -1,0 +1,115 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+<<>>=
+library(dplyr)
+
+process_dataframe <- function(file_path) {
+  # Check if the file exists
+  if (!file.exists(file_path)) {
+    stop("The specified file does not exist.")
+  }
+  df<-as.data.frame(read.table(file_path))
+  colnames(df) <- c("Query_Name", "Query_Length", "Query_Start", "Query_End",
+                    "Strand", "Target_Name", "Target_Length", "Target_Start",
+                    "Target_End", "Matching_Bases","Alignment_Block_Length","Mapping_Quality")
+  df$Query_Chromosome <- sub(".*chr(.*?)\\..*", "\\1", df$Query_Name)
+  df$Target_Chromosome <- sub(".*chr(.*?)\\..*", "\\1", df$Target_Name)
+  
+  df$Query_Arm <- sub("^(p-arm|q-arm)::.*", "\\1", df$Query_Name)
+  df$Target_Arm <- sub("^(p-arm|q-arm)::.*", "\\1", df$Target_Name)
+  
+  df$Chromosome_Match <- ifelse(df$Query_Chromosome == df$Target_Chromosome, df$Query_Chromosome, NA)
+  df$Arm_Match <- ifelse(df$Query_Arm == df$Target_Arm, df$Query_Arm, NA)
+  
+  #remove rows where chromosomes or arms don't match as those are spurious hits
+  df<-na.omit(df)
+  
+  df <- df %>%
+    mutate(Query_Haplotype = case_when(
+      grepl("haplotype1", Query_Name) ~ "haplotype1",
+      grepl("haplotype2", Query_Name) ~ "haplotype2",
+      grepl("maternal", Query_Name) ~ "maternal",
+      grepl("paternal", Query_Name) ~ "paternal",
+      TRUE ~ NA_character_),
+      Target_Haplotype = case_when(
+        grepl("haplotype1", Target_Name) ~ "haplotype1",
+        grepl("haplotype2", Target_Name) ~ "haplotype2",
+        grepl("maternal", Target_Name) ~ "maternal",
+        grepl("paternal", Target_Name) ~ "paternal",
+        TRUE ~ NA_character_))
+  
+  #only keep the hit with the highest Matching_Bases
+  aggregated_df <- df %>%
+    group_by(Chromosome_Match, Arm_Match) %>%
+    arrange(Chromosome_Match,Arm_Match,desc(Matching_Bases)) %>%
+    filter(row_number()==1)
+  
+  print(paste("The number of filtered hits: ",length(table(paste(aggregated_df$Chromosome_Match,aggregated_df$Arm_Match)))))
+  
+  #those p- and q-arms that are easiest to trace from PAN028 to PAN027 should be on the same haplotype
+  #in other words, each chromosome and haplotype combination should give two hits
+  print(table(table(paste(aggregated_df$Chromosome_Match,aggregated_df$Query_Haplotype))==2))
+  print(table(paste(aggregated_df$Chromosome_Match,aggregated_df$Query_Haplotype)))
+  
+  return(aggregated_df)
+}
+
+setwd("/Users/mcechova/Desktop/telomeres/subtelomeres/20240823")
+PAN028_to_PAN027<-process_dataframe("PAN028_to_PAN027.minimap2.formatted.txt")
+PAN027_to_PAN010<-process_dataframe("PAN027_to_PAN010.minimap2.formatted.txt")
+PAN027_to_PAN011<-process_dataframe("PAN027_to_PAN011.minimap2.formatted.txt")
+
+#PAN028_to_PAN027<-process_dataframe("PAN028_to_PAN027.wfmash.formatted.txt")
+#PAN027_to_PAN010<-process_dataframe("PAN027_to_PAN010.wfmash.formatted.txt")
+#PAN027_to_PAN011<-process_dataframe("PAN027_to_PAN011.wfmash.formatted.txt")
+
+
+# we know which chromosomes are maternal so we will trace only those to PAN010
+maternal<-merge(PAN028_to_PAN027[PAN028_to_PAN027$Target_Haplotype=="maternal",],PAN027_to_PAN010,all.x=TRUE,by.x="Target_Name",by.y="Query_Name",suffixes=c(".PAN028_to_PAN027",".PAN027_to_PAN010"))
+
+# we know which chromosomes are paternal so we will trace only those to PAN011
+paternal<-merge(PAN028_to_PAN027[PAN028_to_PAN027$Target_Haplotype=="paternal",],PAN027_to_PAN011,all.x=TRUE,by.x="Target_Name",by.y="Query_Name",suffixes=c("PAN028_to_PAN027",".PAN027_to_PAN011"))
+
+maternal<-na.omit(maternal)
+maternal<-maternal[,c("Query_Name","Target_Name","Target_Name.PAN027_to_PAN010")]
+colnames(maternal)<-c("Generation3","Generation2","Generation1")
+
+paternal<-na.omit(paternal)
+paternal<-paternal[,c("Query_Name","Target_Name","Target_Name.PAN027_to_PAN011")]
+colnames(paternal)<-c("Generation3","Generation2","Generation1")
+
+chromosome_levels <- c(as.character(1:22), "X", "Y")
+
+tracing<-rbind(maternal,paternal)
+tracing <- tracing %>%
+  mutate(Chromosome = sub(".*chr([0-9XY]+).*", "\\1", Generation3))
+tracing <- tracing %>%
+  mutate(across(everything(), ~ sub(":[^:]*$", "", .))) %>%
+  mutate(Chromosome = factor(Chromosome, levels = chromosome_levels)) %>%
+  arrange(Chromosome,Generation3)
+View(tracing)
+
+write.table(tracing, "traced_telomeres.pedigree.tsv", sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+
+@
+
+<<sanity checks>>=
+#we're starting in the grandaughter, so both p- and q- telomeres should be on the same haplotype 
+gen3_haplotype_check<-gsub("p-arm::PAN028.", "", gsub("q-arm::PAN028.", "", tracing$Generation3))
+table(table(gen3_haplotype_check))
+
+#check whether in generation2, p- and q-telomeres are on the same haplotype or not (should be only roughly half the cases due to recombination)
+gen2_haplotype_check<-gsub("p-arm::PAN027.", "", gsub("q-arm::PAN027.", "", tracing$Generation2))
+table(table(gen2_haplotype_check))
+
+#check whether in generation2, p- and q-telomeres are on the same haplotype or not (should be only roughly half the cases due to recombination)
+gen1_haplotype_check<-gsub("p-arm::PAN010.", "", gsub("q-arm::PAN010.", "", tracing$Generation1))
+gen1_haplotype_check<-gsub("p-arm::PAN011.", "", gsub("q-arm::PAN011.", "", gen1_haplotype_check))
+table(table(gen1_haplotype_check))
+@
+
+
+\end{document}
