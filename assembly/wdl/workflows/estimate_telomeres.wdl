@@ -53,7 +53,8 @@ workflow estimateTelomeres {
 
     call concatenateFiles {
         input:
-            files = calculateMedian.summary
+            files = calculateMedian.summary,
+            preemptible=preemptible
     }
 
     output {
@@ -302,7 +303,8 @@ task calculateMedian {
 task concatenateFiles {
     input {
         Array[File] files  
-        String output_name = "merged_summary.txt" 
+        Int preemptible 
+        String output_name = "merged_summary.txt"
     }
 
     command {
