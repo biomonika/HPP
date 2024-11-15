@@ -41,6 +41,7 @@ workflow estimateTelomeres {
 
       call calculateMedian {
         input:
+            chromosome=ExtractFasta.assigned_chromosome,
             telomere_lengths_p_forward=filterTelomeres.telo_p_forward,
             telomere_lengths_p_reverse=filterTelomeres.telo_p_reverse,
             telomere_lengths_q_forward=filterTelomeres.telo_q_forward,
@@ -50,8 +51,13 @@ workflow estimateTelomeres {
 
   }
 
+    call concatenateFiles {
+        input:
+            files = calculateMedian.summary
+    }
+
     output {
-        Array[File] summary = calculateMedian.summary
+        File final_summary = concatenateFiles.concatenated_file
     }
 
     parameter_meta {
@@ -72,7 +78,7 @@ task ExtractFasta {
     Int flank
     Int memSizeGB
     Int threadCount
-    Int diskSizeGB=ceil(size(bam_file, "GB")) * 4
+    Int diskSizeGB=ceil(size(bam_file, "GB")) * 2
     Int preemptible
     }
 
@@ -87,6 +93,8 @@ task ExtractFasta {
 
     echo "chromosome:" $chromosome
     echo "chromosome_length:" $chromosome_length
+
+    echo "${chromosome}" > chromosome.txt
 
     start=1
     last_start=$((${chromosome_length} - ~{flank} + 1))
@@ -122,20 +130,29 @@ task ExtractFasta {
 
         # Convert to BAM, filter for MAPQ >= 10, keep only primary alignments
         samtools view -q 10 -F 2308 -Sb "$sam_file" > "${base_name}.bam"
+
+        #remove unnecessary files
+        rm ${sam_file}
+
         samtools sort "${base_name}.bam" -o "${base_name}_sorted.bam"
+
+        #remove unnecessary files
+        rm ${base_name}.bam
+
         samtools index "${base_name}_sorted.bam"
 
         # Convert to FASTA format
         samtools fasta "${base_name}_sorted.bam" > "${base_name}.fasta"
 
         #remove unnecessary files
-        rm ${sam_file} ${base_name}.bam ${base_name}_sorted.bam
+        rm ${base_name}_sorted.bam
     done
 
 
   >>>
 
   output {
+    String assigned_chromosome = read_string("chromosome.txt")
     File fasta_file_p_forward = "p_forward.fasta"
     File fasta_file_p_reverse = "p_reverse.fasta"
     File fasta_file_q_forward = "q_forward.fasta"
@@ -229,6 +246,7 @@ task filterTelomeres {
 
 task calculateMedian {
     input{
+        String chromosome
         File telomere_lengths_p_forward
         File telomere_lengths_p_reverse
         File telomere_lengths_q_forward
@@ -237,14 +255,16 @@ task calculateMedian {
     }
 
     command <<<
-        R --no-save --args ~{telomere_lengths_p_forward} ~{telomere_lengths_p_reverse} ~{telomere_lengths_q_forward} ~{telomere_lengths_q_reverse} <<Rscript
+        R --no-save --args ~{chromosome} ~{telomere_lengths_p_forward} ~{telomere_lengths_p_reverse} ~{telomere_lengths_q_forward} ~{telomere_lengths_q_reverse} <<Rscript
         args <- commandArgs(trailingOnly = TRUE)
         print(args)
 
-        lengths_p_forward<-scan(as.character(args[1]), what = numeric())
-        lengths_p_reverse<-scan(as.character(args[2]), what = numeric())
-        lengths_q_forward<-scan(as.character(args[3]), what = numeric())
-        lengths_q_reverse<-scan(as.character(args[4]), what = numeric())
+        chromosome<-as.character(args[1])
+
+        lengths_p_forward<-scan(as.character(args[2]), what = numeric())
+        lengths_p_reverse<-scan(as.character(args[3]), what = numeric())
+        lengths_q_forward<-scan(as.character(args[4]), what = numeric())
+        lengths_q_reverse<-scan(as.character(args[5]), what = numeric())
 
         median_telomere_length_lengths_p_forward<-median(lengths_p_forward)
         median_telomere_length_lengths_p_reverse<-median(lengths_p_reverse)
@@ -255,24 +275,41 @@ task calculateMedian {
         #percentile_90_telomere_length_ends <- quantile(lengths_ends, 0.9)
 
         output_df <- data.frame(
+          chromosome = chromosome,
           median_telomere_length_p_forward = median_telomere_length_lengths_p_forward, 
           median_telomere_length_p_reverse = median_telomere_length_lengths_p_reverse, 
           median_telomere_length_q_forward = median_telomere_length_lengths_q_forward, 
           median_telomere_length_q_reverse = median_telomere_length_lengths_q_reverse
         )
 
-        write.table(output_df,file="telomeric.summary.txt",quote=FALSE,col.names=TRUE, row.names=FALSE)
+        write.table(output_df,file=paste0(chromosome,".telomeric.summary.txt"),quote=FALSE,col.names=TRUE, row.names=FALSE)
 
         Rscript
 
     >>>
 
     output {
-        File summary="telomeric.summary.txt"
+        File summary="${chromosome}.telomeric.summary.txt"
     }
 
     runtime {
+        preemptible : preemptible
         docker: "rocker/tidyverse"
     }
 
+}
+
+task concatenateFiles {
+    input {
+        Array[File] files  
+        String output_name = "merged_summary.txt" 
+    }
+
+    command {
+        cat ~{sep=' ' files} > ~{output_name}
+    }
+
+    output {
+        File concatenated_file = output_name
+    }
 }
