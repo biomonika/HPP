@@ -15,5 +15,10 @@ workflows:
    -  name: estimateTelomericLengths
       subclass: WDL
       primaryDescriptorPath: /assembly/wdl/workflows/estimate_telomeres.wdl  
+   -  name: estimateTelomericLengthsLargeBam
+      subclass: WDL
+      primaryDescriptorPath: /assembly/wdl/workflows/estimate_telomeres.big_bam.wdl
+
+      
       
       
