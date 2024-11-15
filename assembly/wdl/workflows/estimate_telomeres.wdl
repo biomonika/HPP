@@ -312,4 +312,9 @@ task concatenateFiles {
     output {
         File concatenated_file = output_name
     }
+
+    runtime {
+        preemptible : preemptible
+        docker: "quay.io/biocontainers/bioawk:1.0--hed695b0_5"
+    }
 }
