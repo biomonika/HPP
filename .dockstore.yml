@@ -12,6 +12,8 @@ workflows:
    -  name: longestReadsUpToCoverage
       subclass: WDL
       primaryDescriptorPath: /assembly/wdl/workflows/longestReadsUpToCoverage.wdl
-      
+   -  name: estimateTelomericLengths
+      subclass: WDL
+      primaryDescriptorPath: /assembly/wdl/workflows/estimate_telomeres.wdl  
       
       
