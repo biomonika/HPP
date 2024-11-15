@@ -79,7 +79,7 @@ task ExtractFasta {
     Int flank
     Int memSizeGB
     Int threadCount
-    Int diskSizeGB=ceil(size(bam_file, "GB")) * 2
+    Int diskSizeGB=ceil(size(bam_file, "GB")) * 3
     Int preemptible
     }
 
