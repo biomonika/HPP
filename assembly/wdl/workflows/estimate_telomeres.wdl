@@ -5,7 +5,7 @@ workflow estimateTelomeres {
   input {
     Array[File] bam_files
     Int flank = 100000
-    Int minReadLength = 15000
+    Int minReadLength = 20000
     Int preemptible = 1
   }
 
