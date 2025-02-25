@@ -65,19 +65,19 @@ while IFS= read -r line; do
   # Align the sequences using minimap2
   alignment_file="$output_dir/${contig}_generation1_aligned.paf"
   stat_file="$output_dir/${contig}_generation1_stat.txt"
-  minimap2 -t ${numCPU} --cs -x asm5 -c "$pan010_seq" "$pan027_seq" > "$alignment_file" 2> /dev/null
+  minimap2 -t ${numCPU} --cs -x asm5 -c "$pan027_seq" "$pan010_seq" > "$alignment_file" 2> /dev/null
   paftools.js stat "$alignment_file" >${stat_file}
   #rm $alignment_file
 
   alignment_file="$output_dir/${contig}_generation2_aligned.paf"
   stat_file="$output_dir/${contig}_generation2_stat.txt"
-  minimap2 -t ${numCPU} --cs -x asm5 -c "$pan028_seq" "$pan027_seq" > "$alignment_file" 2> /dev/null
+  minimap2 -t ${numCPU} --cs -x asm5 -c "$pan027_seq" "$pan028_seq" > "$alignment_file" 2> /dev/null
   paftools.js stat "$alignment_file" >${stat_file}
   #rm $alignment_file
 
   alignment_file="$output_dir/${contig}_generations13_aligned.paf"
   stat_file="$output_dir/${contig}_generations13_stat.txt"
-  minimap2 -t ${numCPU} --cs -x asm5 -c "$pan028_seq" "$pan010_seq" > "$alignment_file" 2> /dev/null
+  minimap2 -t ${numCPU} --cs -x asm5 -c "$pan010_seq" "$pan028_seq" > "$alignment_file" 2> /dev/null
   paftools.js stat "$alignment_file" >${stat_file}
   #rm $alignment_file
 
