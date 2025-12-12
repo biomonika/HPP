@@ -2,36 +2,6 @@
 
 The [Telomere-to-Telomere Consortium](https://sites.google.com/ucsc.edu/t2tworkinggroup) aims to release (near) T2T genomes of a three generational pedigree. This pedigree includes four American-African family members, sequenced with a wide variety of sequencing technologies. 
 
-The initial assemblies used [Verkko](https://github.com/marbl/verkko) assembler.
-
-# Assembly releases
-
-The next release is expected in January 2024.
-
-### April, 2023
-The original assemblies
-
-
-| PAN010 | PAN011 | PAN027 | PAN028 |
-|:----------|:----------|:----------|:----------|
-| [PAN010 haplotype1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN010.haplotype1.fasta.gz) | [PAN011 haplotype1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN011.haplotype1.fasta.gz) | [PAN027 haplotype1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN027.haplotype1.fasta.gz) | [PAN028 haplotype1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN028.haplotype1.fasta.gz) |
-| [PAN010 haplotype2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN010.haplotype2.fasta.gz) | [PAN011 haplotype2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN011.haplotype2.fasta.gz) | [PAN027 haplotype2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN027.haplotype2.fasta.gz) | [PAN028 haplotype2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN028.haplotype2.fasta.gz) |
-
-
-
-### December, 2023
-These assemblies contain 35, 31, 36, and 34 T2T candidate chromosomes for PAN010, PAN011, PAN028, and PAN027 Hi-C phased assemblies, respectively. 
-
-| PAN010 hic | PAN011 hic | PAN027 hic | PAN027 trio | PAN028 hic |
-|:----------|:----------|:----------|:----------|:----------|
-| [PAN010 haplotype1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/hifiduplex/assemblies/PAN010_verkko_hifiduplex_v1.4.1_hic.hap1.fa.gz) | [PAN011 haplotype1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/hifiduplex/assemblies/PAN011_verkko_hifiduplex_v1.4.1_hic.hap1.fa.gz) | [PAN027 haplotype1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/hifiduplex/assemblies/PAN027_blood_verkko_hifiduplex_v1.4.1_hic.hap1.fa.gz) | [PAN027 haplotype1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/hifiduplex/assemblies/PAN027_blood_verkko_hifiduplex_v1.4.1_trio.paternal.fa.gz) | [PAN028 haplotype1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/hifiduplex/assemblies/PAN028_verkko_hifiduplex_v1.4.1_hic.hap1.fa.gz) |
-| [PAN010 haplotype2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/hifiduplex/assemblies/PAN010_verkko_hifiduplex_v1.4.1_hic.hap2.fa.gz) | [PAN011 haplotype2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/hifiduplex/assemblies/PAN011_verkko_hifiduplex_v1.4.1_hic.hap2.fa.gz) | [PAN027 haplotype2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/hifiduplex/assemblies/PAN027_blood_verkko_hifiduplex_v1.4.1_hic.hap2.fa.gz) | [PAN027 haplotype2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/hifiduplex/assemblies/PAN027_blood_verkko_hifiduplex_v1.4.1_trio.maternal.fa.gz) | [PAN028 haplotype2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/hifiduplex/assemblies/PAN028_verkko_hifiduplex_v1.4.1_hic.hap2.fa.gz) |
-
-**Dipcall**
-| PAN010 hic | PAN011 hic | PAN027 hic | PAN027 trio | PAN028 hic |
-|:----------|:----------|:----------|:----------|:----------|
-| [bed](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN010_verkko_hifiduplex_v1.4.1_hic.hap2.dipcall.bed) [vcf](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN010_verkko_hifiduplex_v1.4.1_hic.hap2.dipcall.vcf.gz) | [bed](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN011_verkko_hifiduplex_v1.4.1_hic.hap1.dipcall.bed) [vcf](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN011_verkko_hifiduplex_v1.4.1_hic.hap1.dipcall.vcf.gz) | [bed](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN027_blood_verkko_hifiduplex_v1.4.1_hic.hap2.dipcall.bed) [vcf](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN027_blood_verkko_hifiduplex_v1.4.1_hic.hap2.dipcall.vcf.gz) | [bed](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN027_blood_verkko_hifiduplex_v1.4.1_trio.dipcall.bed) [vcf](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN027_blood_verkko_hifiduplex_v1.4.1_trio.dipcall.vcf.gz) | [bed](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN028_verkko_hifiduplex_v1.4.1_hic.hap2.dipcall.bed) [vcf](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PAN028_verkko_hifiduplex_v1.4.1_hic.hap2.dipcall.vcf.gz) |
-
 ### Sequencing data
 
 ## HiFi Data
