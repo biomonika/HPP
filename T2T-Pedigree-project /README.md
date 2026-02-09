@@ -42,7 +42,38 @@ The [Telomere-to-Telomere Consortium](https://sites.google.com/ucsc.edu/t2tworki
 | DC 1 | DC 2 | DC 3 | 
 |---------|---------|---------|
 | [1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/1E2DD570-3B26-418B-B50F-5417F64C5679--HIFI_DEEPCONSENSUS/MGISTL_PAN027_HG06807/raw_data/PacBio_HiFi/DeepConsensus/m64043_211118_185250.dc0.2.Q20.fastq.gz) | [2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/1E2DD570-3B26-418B-B50F-5417F64C5679--HIFI_DEEPCONSENSUS/MGISTL_PAN027_HG06807/raw_data/PacBio_HiFi/DeepConsensus/m64043_211120_054831.dc0.2.Q20.fastq.gz) | [3](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/1E2DD570-3B26-418B-B50F-5417F64C5679--HIFI_DEEPCONSENSUS/MGISTL_PAN027_HG06807/raw_data/PacBio_HiFi/DeepConsensus/m64043_211121_164646.dc0.2.Q20.fastq.gz) | 
- 
+
+## HiFi Data (methylcalled — bam file with MM/ML tags)
+
+<span style="color:red;">***BLOOD***</span>
+
+**PAN010**
+
+| DC 1 | DC 2 | DC 3 | DC 4 |
+|---------|---------|---------|---------|
+| [1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN010.m64043_210416_171718.5mc.hifi_reads.bam) | [2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN010.m64043_210418_021436.5mc.hifi_reads.bam) | [3](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN010.m64043_210420_151018.5mc.hifi_reads.bam) | [4](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN010.m64043_210421_224017.5mc.hifi_reads.bam) |
+
+**PAN011**
+
+| DC 1 | DC 2 | DC 3 | DC 4 |
+|---------|---------|---------|---------|
+| [1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN011.m64136_210506_183715.5mc.hifi_reads.bam) | [2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN011.m64136_210508_020125.5mc.hifi_reads.bam) | [3](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN011.m64136_210509_092431.5mc.hifi_reads.bam) | [4](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN011.m64136_210510_164711.5mc.hifi_reads.bam) |
+
+**PAN027**
+
+| DC 1 | DC 2 | DC 3 | DC 4 | DC 5 | DC 6 |
+|---------|---------|---------|---------|---------|---------|
+| [1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/m64043_210925_220058.5mc.hifi_reads.bam) | [2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/m64043_210927_090130.5mc.hifi_reads.bam) | [3](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/m64136_210423_181015.5mc.hifi_reads.bam) | [4](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/m64136_210425_000914.5mc.hifi_reads.bam) | [5](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/m64136_210426_185548.5mc.hifi_reads.bam) | [6](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/m64136_210428_005505.5mc.hifi_reads.bam) |
+
+
+**PAN028**
+
+| DC 1 | DC 2 | DC 3 | DC 4 |
+|---------|---------|---------|---------|
+| [1](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN028.m64136_210429_180938.5mc.hifi_reads.bam) | [2](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN028.m64136_210501_013313.5mc.hifi_reads.bam) | [3](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN028.m64136_210503_174237.5mc.hifi_reads.bam) | [4](https://s3-us-west-2.amazonaws.com/human-pangenomics/submissions/61E64CC7-3281-4387-B428-C284F65B84EE--WASHU_PED_DATA/PacBio/blood/methycalled/PAN028.m64136_210505_005712.5mc.hifi_reads.bam) |
+
+---
+
 ## Oxford Nanopore Data
 
 <span style="color:blue;">***CELL DUPLEX***</span>
